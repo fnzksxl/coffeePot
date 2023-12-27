@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
     DB_PORT: int
+    JSON_DATA: str
 
     class Config:
         extra = "ignore"
