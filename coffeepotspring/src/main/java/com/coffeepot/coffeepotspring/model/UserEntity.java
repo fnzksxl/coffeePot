@@ -24,6 +24,8 @@ public class UserEntity {
 	@UuidGenerator
 	private String id;
 	
+	private String email;
+	
 	@Column(nullable = false)
 	private String username;
 	
@@ -32,5 +34,13 @@ public class UserEntity {
 	private String password;
 	private String role; // 사용자의 롤 (애드민, 일반 등)
 	private String authProvider; // 이후 OAuth에서 사용할 유저 정보 제공자 github 등
+	
+	public void updateEmail(String email) {
+		this.email = email;
+	}
+	
+	public void updatePassword(String password) {
+		this.password = password;
+	}
 
 }

@@ -1,6 +1,7 @@
 package com.coffeepot.coffeepotspring.security;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -34,40 +35,49 @@ public class OAuthUserServiceImpl extends DefaultOAuth2UserService {
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
-
+		
 		final String authProvider = userRequest.getClientRegistration().getClientName();
 		// username으로 사용할 필드 가져옴
 		// authprovider마다 구성이 다름
-		final String username;
+		final String email, username;
 		switch (authProvider) {
 		case "GitHub":
+			email = "";
 			username = (String) oAuth2User.getAttributes().get("login");
 			break;
 		case "Google":
+			email = (String) oAuth2User.getAttributes().get("email");
 			username = (String) oAuth2User.getAttributes().get("name");
 			break;
 		case "Kakao":
 			Map<String, Object> kakaoAccount = (Map<String, Object>) oAuth2User.getAttributes().get("kakao_account");
+			email = (String) kakaoAccount.get("email");
 			Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
 			username = (String) profile.get("nickname");
 			break;
 		case "Naver":
 			Map<String, Object> response = (Map<String, Object>) oAuth2User.getAttributes().get("response");
+			email = (String) response.get("email");
 			username = (String) response.get("name");
 			break;
 		default:
+			email = "";
 			username = "";
 		}
 
+		Optional<UserEntity> oUserEntity = userRepository.findByEmail(email);
 		UserEntity userEntity = null;
-		if (!userRepository.existsByUsername(username)) {
+		if (oUserEntity.isPresent()) {
+			userEntity = oUserEntity.get();
+			userEntity.updateEmail(username);
+			userEntity = userRepository.save(userEntity);
+		} else {
 			userEntity = UserEntity.builder()
+					.email(email)
 					.username(username)
 					.authProvider(authProvider)
 					.build();
-			userEntity = userRepository.save(userEntity);
-		} else {
-			userEntity = userRepository.findByUsername(username);
+			userEntity = userRepository.save(userEntity); 
 		}
 
 		log.info("Successfully pulled user info username {} authProvider {}",
@@ -76,7 +86,5 @@ public class OAuthUserServiceImpl extends DefaultOAuth2UserService {
 
 		return new ApplicationOAuth2User(userEntity.getId(), oAuth2User.getAttributes());
 	}
-
-
 
 }

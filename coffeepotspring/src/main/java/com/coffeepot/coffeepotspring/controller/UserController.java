@@ -37,12 +37,12 @@ public class UserController {
 				throw new RuntimeException("Invalid Password value.");
 			}
 			// 요청을 이용해 유저 만들기
-			UserEntity user = UserEntity.builder()
+			UserEntity userEntity = UserEntity.builder()
 					.username(userDTO.getUsername())
 					.password(passwordEncoder.encode(userDTO.getPassword()))
 					.build();
 			// 서비스를 이용해 유저 리포지토리에 저장
-			UserEntity registeredUser = userService.create(user);
+			UserEntity registeredUser = userService.create(userEntity);
 			UserDTO responseUserDTO = UserDTO.builder()
 					.id(registeredUser.getId())
 					.username(registeredUser.getUsername())
@@ -57,21 +57,21 @@ public class UserController {
 			return ResponseEntity.badRequest().body(responseDTO);
 		}
 	}
-	
+
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticate(@RequestBody UserDTO userDTO) {
-		UserEntity user = userService.getByCredentials(
+		UserEntity userEntity = userService.getByCredentials(
 				userDTO.getUsername(),
 				userDTO.getPassword(),
 				passwordEncoder);
 		
 		// signin 시에는 access, refresh 둘 다 발급
-		if (user != null) {
-			final String accessToken = tokenProvider.createAccessToken(user);
-			final String refreshToken = tokenProvider.createRefreshToken(user);
+		if (userEntity != null) {
+			final String accessToken = tokenProvider.createAccessToken(userEntity);
+			final String refreshToken = tokenProvider.createRefreshToken(userEntity);
 			final UserDTO responseUserDTO = UserDTO.builder()
-					.username(user.getUsername())
-					.id(user.getId())
+					.username(userEntity.getUsername())
+					.id(userEntity.getId())
 					.accessToken(accessToken)
 					.refreshToken(refreshToken)
 					.build();
@@ -83,24 +83,23 @@ public class UserController {
 			return ResponseEntity.badRequest().body(responseDTO);
 		}
 	}
-	
+
 	@PatchMapping("/reissue")
 	public ResponseEntity<?> reissueAccessToken(@RequestBody UserDTO userDTO, HttpServletRequest request) {
-		// Http 요청의 헤더를 파싱해 Bearer 토큰 리턴
 		String refreshToken = request.getHeader("Authorization");
 		
 		if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
 			refreshToken = refreshToken.substring(7);
 		}
 		
-		UserEntity user = userService.getByCredentials(
+		UserEntity userEntity = userService.getByCredentials(
 				userDTO.getUsername(),
 				userDTO.getPassword(),
 				passwordEncoder);
 		
-		String[] tokens = tokenProvider.validateAndReissueTokens(refreshToken, user);
+		String accessToken = tokenProvider.validateAndReissueAccessToken(refreshToken, userEntity);
 		// null을 반환받았다면 if 문 실행
-		if (tokens == null) {
+		if (accessToken == null) {
 			ResponseDTO responseDTO = ResponseDTO.builder()
 					.error("Reissue Failed")
 					.build();
@@ -108,10 +107,9 @@ public class UserController {
 		}
 		
 		UserDTO responseUserDTO = UserDTO.builder()
-				.username(user.getUsername())
-				.id(user.getId())
-				.accessToken(tokens[0])
-				.refreshToken(tokens[1])
+				.username(userEntity.getUsername())
+				.id(userEntity.getId())
+				.accessToken(accessToken)
 				.build();
 		return ResponseEntity.ok().body(responseUserDTO);
 	}

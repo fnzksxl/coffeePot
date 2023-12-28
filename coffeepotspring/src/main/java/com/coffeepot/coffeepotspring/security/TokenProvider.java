@@ -4,8 +4,8 @@ import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Optional;
 
-import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +31,7 @@ public class TokenProvider {
 //	private static final String SECRET_KEY = "d29hZXBpdGh1Z2tkbGZobnZqa2x6eGRoMTIzNDgNCjk"
 //			+ "wNTY5MDgyMzU3MjM5MOOFkOOFlOOFiOOEt+uogOOFl+OFheOFjuudvOOFo+OFgeOFh+uGh1JJQ"
 //			+ "UVPVURHSFRCRkpLU0FETEZIRyYqXigqXiokXiYqKylffToNCns+Ij9+IUAjdyQ=";
+	private static final String ISSUER = "coffeepot";
 	private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 
 	public String createAccessToken(UserEntity userEntity) {
@@ -59,7 +60,7 @@ public class TokenProvider {
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				// payload에 들어갈 내용
 				.setSubject(userEntity.getId()) // sub
-				.setIssuer("coffepot") // iss
+				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
@@ -73,19 +74,6 @@ public class TokenProvider {
 				Instant.now()
 				.plus(1, ChronoUnit.HOURS));
 		
-		/*
-		 * { // header
-		 *   "alg": "HS512"
-		 * }.
-		 * { // payload
-		 *   "sub": "~~~...",
-		 *   "iss": "demo app",
-		 *   "iat": "1595733657",
-		 *   "exp": "1596597657"
-		 * }.
-		 * // 서명
-		 * ~~~...
-		 */
 		// JWT Token 생성
 		return Jwts.builder()
 				// 헤더에 들어갈 내용 및 서명 SECRET_KEY 설정
@@ -93,7 +81,7 @@ public class TokenProvider {
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				// payload에 들어갈 내용
 				.setSubject(userPrincipal.getName()) // sub
-				.setIssuer("coffepot") // iss
+				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
@@ -108,12 +96,13 @@ public class TokenProvider {
 		String refreshToken = Jwts.builder()
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				.setSubject(userEntity.getUsername())
-				.setIssuer("coffepot")
+				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
 		jwtRepository.save(RefreshToken.builder()
-				.token(refreshToken)
+				.userId(userEntity.getUsername())
+				.refreshToken(refreshToken)
 				.build());
 		
 		return refreshToken;
@@ -129,12 +118,13 @@ public class TokenProvider {
 		String refreshToken = Jwts.builder()
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				.setSubject(userPrincipal.getName())
-				.setIssuer("coffepot")
+				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
 		jwtRepository.save(RefreshToken.builder()
-				.token(refreshToken)
+				.userId(userPrincipal.getName())
+				.refreshToken(refreshToken)
 				.build());
 		
 		return refreshToken;
@@ -151,15 +141,13 @@ public class TokenProvider {
 	}
 
 	// refresh token이 DB에 있는지 검증 후 있으면 새 access token 발급
-	public String[] validateAndReissueTokens(String token, UserEntity userEntity) {
-		if (jwtRepository.findByToken(token) != null) {
-			String[] tokens = new String[] {createAccessToken(userEntity), createRefreshToken(userEntity)};
-			return tokens;
+	public String validateAndReissueAccessToken(String token, UserEntity userEntity) {
+		Optional<RefreshToken> refreshToken = jwtRepository.findByRefreshToken(token);
+		if (refreshToken.isPresent()) {
+			String accessToken = createAccessToken(userEntity);
+			return accessToken;
 		} else {
-			// TODO
-			// 예외를 던질 수도 있고 null을 return할 수도 있다.
-		    throw new DataRetrievalFailureException("Refresh Token not found");
-//		    return null;
+		    return null;
 		}
 	}
 

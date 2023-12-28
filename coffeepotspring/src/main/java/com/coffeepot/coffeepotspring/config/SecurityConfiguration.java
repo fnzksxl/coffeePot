@@ -12,6 +12,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.filter.CorsFilter;
 
 import com.coffeepot.coffeepotspring.security.JwtAuthenticationFilter;
+import com.coffeepot.coffeepotspring.security.OAuthAuthorizationRequestBasedOnCookieRepository;
 import com.coffeepot.coffeepotspring.security.OAuthSuccessHandler;
 import com.coffeepot.coffeepotspring.security.OAuthUserServiceImpl;
 import com.coffeepot.coffeepotspring.security.RedirectUrlCookieFilter;
@@ -28,6 +29,7 @@ public class SecurityConfiguration {
 	private final OAuthUserServiceImpl oAuthUserService;
 	private final OAuthSuccessHandler oAuthSuccessHandler;
 	private final RedirectUrlCookieFilter redirectUrlFilter;
+	private final OAuthAuthorizationRequestBasedOnCookieRepository oAuthAuthorizationRequestBasedOnCookieRepository;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -53,7 +55,8 @@ public class SecurityConfiguration {
 				.redirectionEndpoint((endpoint) -> endpoint
 						.baseUri("/oauth2/callback/*"))
 				.authorizationEndpoint((endpoint) -> endpoint
-						.baseUri("/auth/authorize")) // 원래는 /oauth2/authorization인 것을 /auth/authorization으로 변경
+						.baseUri("/auth/authorize")
+						.authorizationRequestRepository(oAuthAuthorizationRequestBasedOnCookieRepository)) // Spring boot의 기본값인 /oauth2/authorization을 /auth/authorization으로 변경
 				.userInfoEndpoint((endpoint) -> endpoint
 						.userService(oAuthUserService)) // callback uri 설정, oauth2Login 설정
 				.successHandler(oAuthSuccessHandler))
@@ -62,7 +65,7 @@ public class SecurityConfiguration {
 				.authenticationEntryPoint(new Http403ForbiddenEntryPoint())); // 403 EntryPoint 추가
 		// TODO
 		// redirect_url을 파라미터로 넘겨주면 클라이언트에서 아무나 이 값을 바꿀 수 있으므로
-		// 서버에서 redirect_url이 허용된 도메인을 갖고 있는지 확인해야 한다.
+		// 실제 서비스에서는 서버에서 redirect_url이 허용된 도메인을 갖고 있는지 확인해야 한다.
 
 		// 매 요청마다 CorsFilter 실행 후 jwtAuthenticationFilter 실행
 		http.addFilterAfter(jwtAuthenticationFilter, CorsFilter.class);
