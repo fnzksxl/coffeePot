@@ -16,8 +16,26 @@ repositories {
 }
 
 dependencies {
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	compileOnly 'org.projectlombok:lombok'
+	
+	developmentOnly 'org.springframework.boot:spring-boot-devtools' // 서버 자동 재시작
+	
+	// jjwt는 jjwt-api로 옮겨짐, jjwt-api 사용 시 jjwt-impl도 사용해야 함.
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	implementation 'io.jsonwebtoken:jjwt-gson:0.11.5'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.security:spring-security-oauth2-client'
+	
+	runtimeOnly 'com.h2database:h2'
+	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('bootBuildImage') {
