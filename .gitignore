@@ -1,0 +1,5 @@
+coffeepotspring/db/
+coffeepotspring/src/main/resources/application-dev.yml
+
+### eclipse ###
+.metadata
