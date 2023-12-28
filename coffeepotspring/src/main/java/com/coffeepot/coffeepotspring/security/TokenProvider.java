@@ -5,20 +5,27 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import com.coffeepot.coffeepotspring.model.RefreshToken;
 import com.coffeepot.coffeepotspring.model.UserEntity;
+import com.coffeepot.coffeepotspring.persistence.JwtRepository;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TokenProvider {
+	
+	private final JwtRepository jwtRepository;
 
 	// deprecated
 //	private static final String SECRET_KEY = "d29hZXBpdGh1Z2tkbGZobnZqa2x6eGRoMTIzNDgNCjk"
@@ -26,11 +33,11 @@ public class TokenProvider {
 //			+ "UVPVURHSFRCRkpLU0FETEZIRyYqXigqXiokXiYqKylffToNCns+Ij9+IUAjdyQ=";
 	private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 
-	public String create(UserEntity userEntity) {
+	public String createAccessToken(UserEntity userEntity) {
 		// 기한은 지금부터 1일로 설정
 		Date expiryDate = Date.from(
 				Instant.now()
-				.plus(1, ChronoUnit.DAYS));
+				.plus(1, ChronoUnit.HOURS));
 		
 		/*
 		 * { // header
@@ -52,19 +59,19 @@ public class TokenProvider {
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				// payload에 들어갈 내용
 				.setSubject(userEntity.getId()) // sub
-				.setIssuer("todo app") // iss
+				.setIssuer("coffepot") // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
 	}
 	
-	public String create(final Authentication authentication) {
+	public String createAccessToken(final Authentication authentication) {
 		ApplicationOAuth2User userPrincipal = (ApplicationOAuth2User) authentication.getPrincipal(); 
 		
 		// 기한은 지금부터 1일로 설정
 		Date expiryDate = Date.from(
 				Instant.now()
-				.plus(1, ChronoUnit.DAYS));
+				.plus(1, ChronoUnit.HOURS));
 		
 		/*
 		 * { // header
@@ -86,10 +93,51 @@ public class TokenProvider {
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				// payload에 들어갈 내용
 				.setSubject(userPrincipal.getName()) // sub
-				.setIssuer("todo app") // iss
+				.setIssuer("coffepot") // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
+	}
+	
+	public String createRefreshToken(UserEntity userEntity) {
+		// 기한은 지금부터 2주로 설정
+		Date expiryDate = Date.from(
+				Instant.now()
+				.plus(14, ChronoUnit.DAYS));
+		
+		String refreshToken = Jwts.builder()
+				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
+				.setSubject(userEntity.getUsername())
+				.setIssuer("coffepot")
+				.setIssuedAt(new Date())
+				.setExpiration(expiryDate)
+				.compact();
+		jwtRepository.save(RefreshToken.builder()
+				.token(refreshToken)
+				.build());
+		
+		return refreshToken;
+	}
+	
+	public String createRefreshToken(final Authentication authentication) {
+		ApplicationOAuth2User userPrincipal = (ApplicationOAuth2User) authentication.getPrincipal();
+		
+		Date expiryDate = Date.from(
+				Instant.now()
+				.plus(14, ChronoUnit.DAYS));
+		
+		String refreshToken = Jwts.builder()
+				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
+				.setSubject(userPrincipal.getName())
+				.setIssuer("coffepot")
+				.setIssuedAt(new Date())
+				.setExpiration(expiryDate)
+				.compact();
+		jwtRepository.save(RefreshToken.builder()
+				.token(refreshToken)
+				.build());
+		
+		return refreshToken;
 	}
 	
 	public String validateAndGetUserId(String token) {
@@ -100,6 +148,19 @@ public class TokenProvider {
 				.getBody();
 		
 		return claims.getSubject();
+	}
+
+	// refresh token이 DB에 있는지 검증 후 있으면 새 access token 발급
+	public String[] validateAndReissueTokens(String token, UserEntity userEntity) {
+		if (jwtRepository.findByToken(token) != null) {
+			String[] tokens = new String[] {createAccessToken(userEntity), createRefreshToken(userEntity)};
+			return tokens;
+		} else {
+			// TODO
+			// 예외를 던질 수도 있고 null을 return할 수도 있다.
+		    throw new DataRetrievalFailureException("Refresh Token not found");
+//		    return null;
+		}
 	}
 
 }

@@ -3,6 +3,8 @@ package com.coffeepot.coffeepotspring.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +16,7 @@ import com.coffeepot.coffeepotspring.model.UserEntity;
 import com.coffeepot.coffeepotspring.security.TokenProvider;
 import com.coffeepot.coffeepotspring.service.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,12 +65,15 @@ public class UserController {
 				userDTO.getPassword(),
 				passwordEncoder);
 		
+		// signin 시에는 access, refresh 둘 다 발급
 		if (user != null) {
-			final String token = tokenProvider.create(user);
+			final String accessToken = tokenProvider.createAccessToken(user);
+			final String refreshToken = tokenProvider.createRefreshToken(user);
 			final UserDTO responseUserDTO = UserDTO.builder()
 					.username(user.getUsername())
 					.id(user.getId())
-					.token(token)
+					.accessToken(accessToken)
+					.refreshToken(refreshToken)
 					.build();
 			return ResponseEntity.ok().body(responseUserDTO);
 		} else {
@@ -76,6 +82,38 @@ public class UserController {
 					.build();
 			return ResponseEntity.badRequest().body(responseDTO);
 		}
+	}
+	
+	@PatchMapping("/reissue")
+	public ResponseEntity<?> reissueAccessToken(@RequestBody UserDTO userDTO, HttpServletRequest request) {
+		// Http 요청의 헤더를 파싱해 Bearer 토큰 리턴
+		String refreshToken = request.getHeader("Authorization");
+		
+		if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
+			refreshToken = refreshToken.substring(7);
+		}
+		
+		UserEntity user = userService.getByCredentials(
+				userDTO.getUsername(),
+				userDTO.getPassword(),
+				passwordEncoder);
+		
+		String[] tokens = tokenProvider.validateAndReissueTokens(refreshToken, user);
+		// null을 반환받았다면 if 문 실행
+		if (tokens == null) {
+			ResponseDTO responseDTO = ResponseDTO.builder()
+					.error("Reissue Failed")
+					.build();
+			return ResponseEntity.badRequest().body(responseDTO);
+		}
+		
+		UserDTO responseUserDTO = UserDTO.builder()
+				.username(user.getUsername())
+				.id(user.getId())
+				.accessToken(tokens[0])
+				.refreshToken(tokens[1])
+				.build();
+		return ResponseEntity.ok().body(responseUserDTO);
 	}
 
 }
