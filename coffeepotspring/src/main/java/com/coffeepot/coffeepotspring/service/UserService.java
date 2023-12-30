@@ -1,5 +1,7 @@
 package com.coffeepot.coffeepotspring.service;
 
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +41,38 @@ public class UserService {
 			return originalUser;
 		}
 		return null;
+	}
+	
+	public UserEntity findById(String userId) {
+		return userRepository.findById(userId)
+				.orElseThrow(() -> new IllegalArgumentException("Unexpected User"));
+	}
+
+	// TODO 아이디 찾기
+	// 가입 정보 정해지면 구체적으로 구현하기
+	// 일단 이메일로 임시 구현
+	public UserEntity getByUsernameInfo(List<String> usernameInfo) {
+		return userRepository.findByEmail(usernameInfo.get(0))
+				.orElseThrow(() -> new IllegalArgumentException("Unexpected Username Info"));
+		// 이후 다른 정보로 matches 검사...
+	}
+
+	public UserEntity getByPasswordInfo(List<String> passwordInfo) {
+		return userRepository.findByEmail(passwordInfo.get(0))
+				.orElseThrow(() -> new IllegalArgumentException("Unexpected Password Info"));
+		// 이후 다른 정보로 matches 검사...
+	}
+
+	public void updatePassword(String username, String password, PasswordEncoder passwordEncoder) {
+		UserEntity userEntity = userRepository.findByUsername(username);
+		userEntity.updatePassword(password);
+		userRepository.save(userEntity);
+	}
+
+	public UserEntity updatePassword(UserEntity userEntity) {
+		UserEntity originalUser = userRepository.findByUsername(userEntity.getUsername());
+		originalUser.updatePassword(userEntity.getPassword());
+		return userRepository.save(originalUser);
 	}
 
 }

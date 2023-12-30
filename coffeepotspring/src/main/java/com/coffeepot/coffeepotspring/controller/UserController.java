@@ -1,5 +1,8 @@
 package com.coffeepot.coffeepotspring.controller;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -112,6 +115,72 @@ public class UserController {
 				.accessToken(accessToken)
 				.build();
 		return ResponseEntity.ok().body(responseUserDTO);
+	}
+	
+	@PostMapping("/find-username")
+	public ResponseEntity<?> findUsername(@RequestBody UserDTO userDTO) {
+		List<String> usernameInfo = new ArrayList<String>();
+		usernameInfo.add(userDTO.getEmail());
+		// TODO
+		// 이외 다른 가입 정보 정해지면 추가로 add 하기
+		
+		try {
+			UserEntity userEntity = userService.getByUsernameInfo(usernameInfo);
+			final UserDTO responseUserDTO = UserDTO.builder()
+					.username(userEntity.getUsername())
+					.build();
+			return ResponseEntity.ok().body(responseUserDTO);
+		} catch (Exception e) {
+			ResponseDTO responseDTO = ResponseDTO.builder()
+					.error("No Such Username")
+					.build();
+			return ResponseEntity.badRequest().body(responseDTO);
+		}
+	}
+	
+	@PostMapping("/find-password")
+	public ResponseEntity<?> findPassword(@RequestBody UserDTO userDTO) {
+		List<String> passwordInfo = new ArrayList<String>();
+		passwordInfo.add(userDTO.getEmail());
+		// TODO
+		// 이외 다른 가입 정보 정해지면 추가로 add 하기
+		
+		// 비밀번호를 알려줄 수 없으므로 재설정하도록 해야 함
+		try {
+			UserEntity userEntity = userService.getByPasswordInfo(passwordInfo);
+			final UserDTO responseUserDTO = UserDTO.builder()
+					.username(userEntity.getUsername())
+					.build();
+			return ResponseEntity.ok().body(responseUserDTO);
+		} catch (Exception e) {
+			ResponseDTO responseDTO = ResponseDTO.builder()
+					.error("No Password Matching")
+					.build();
+			return ResponseEntity.badRequest().body(responseDTO);
+		}
+	}
+	
+	@PostMapping("/reset-password")
+	public ResponseEntity<?> resetPassword(@RequestBody UserDTO userDTO) {
+		try {
+			UserEntity userEntity = UserEntity.builder()
+					.username(userDTO.getUsername())
+					.password(passwordEncoder.encode(userDTO.getPassword()))
+					.build();
+			UserEntity passwordChangedUser = userService.updatePassword(userEntity);
+
+			UserDTO responseUserDTO = UserDTO.builder()
+					.id(passwordChangedUser.getId())
+					.username(passwordChangedUser.getUsername())
+					.build();
+			
+			return ResponseEntity.ok().body(responseUserDTO);
+		} catch (Exception e) {
+			ResponseDTO responseDTO = ResponseDTO.builder()
+					.error(e.getMessage())
+					.build();
+			return ResponseEntity.badRequest().body(responseDTO);
+		}
 	}
 
 }
