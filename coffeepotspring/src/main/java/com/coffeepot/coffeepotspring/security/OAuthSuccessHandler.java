@@ -46,7 +46,7 @@ public class OAuthSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 				.filter(cookie -> cookie.getName().equals(REDIRECT_URI_PARAM)).findFirst();
 		Optional<String> redirectUri = oCookie.map(Cookie::getValue);
 //		response.getWriter().write(token);
-		log.info("accessToken {}, refreshToken {}", accessToken);
+		log.info("accessToken {}, refreshToken {}", accessToken, refreshToken);
 //		response.sendRedirect("http://localhost:3000/sociallogin?token=" + token);
 		response.sendRedirect(redirectUri.orElseGet(() -> LOCAL_REDIRECT_URL)
 				+ "/sociallogin?token=" + accessToken);
