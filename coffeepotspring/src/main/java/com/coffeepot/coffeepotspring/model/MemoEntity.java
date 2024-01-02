@@ -47,5 +47,9 @@ public class MemoEntity {
 	@Builder.Default
 	@OneToMany(mappedBy = "memoEntity")
 	private List<UserLikeMemo> likers = new ArrayList<>();
+	
+	@Builder.Default
+	@OneToMany(mappedBy = "memoEntity")
+	private List<HashTagEntity> hashTags = new ArrayList<>();
 
 }
