@@ -8,16 +8,15 @@ import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Getter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,9 +32,7 @@ public class MemoEntity {
 	private String content;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
-
-	@ManyToOne
-	private UserEntity author;
+	private String userId; // 이 메모 작성자의 id
 
 	// 다대다 관계는 명시적 테이블 생성
 	// users - scrap - memos
