@@ -41,7 +41,7 @@ public class UserEntity {
 	private String authProvider; // 이후 OAuth에서 사용할 유저 정보 제공자 github 등
 
 	@Builder.Default
-	@OneToMany(mappedBy = "author", cascade = CascadeType.REMOVE)
+	@OneToMany(mappedBy = "userId", cascade = CascadeType.REMOVE)
 	private List<MemoEntity> writtenMemos = new ArrayList<>();
 
 	// 다대다 관계는 명시적 테이블 생성
