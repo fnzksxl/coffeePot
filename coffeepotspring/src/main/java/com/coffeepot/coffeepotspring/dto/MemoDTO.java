@@ -1,5 +1,9 @@
 package com.coffeepot.coffeepotspring.dto;
 
+import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
+
 import com.coffeepot.coffeepotspring.model.MemoEntity;
 
 import lombok.AllArgsConstructor;
@@ -16,21 +20,26 @@ public class MemoDTO {
 	private String id;
 	private String title;
 	private String content;
-	private boolean visibility;
+	private String visibility; // 메모 공개 범위 public, private
 	
-	public MemoDTO(final MemoEntity memoEntity) {
+	private List<MultipartFile> uploadedImages;
+	
+	private List<String> imagsUris;
+	
+	public MemoDTO(final MemoEntity memoEntity, final List<String> imagesUri) {
 		this.id = memoEntity.getId();
 		this.title = memoEntity.getTitle();
 		this.content = memoEntity.getContent();
-		this.visibility = memoEntity.getVisibility();
+		this.visibility = memoEntity.getVisibility() ? "public" : "private";
+		this.imagsUris = imagesUri;
 	}
 	
-	public static MemoEntity toEntity(final MemoDTO memoDTO) {
+	public static MemoEntity toMemoEntity(final MemoDTO memoDTO) {
 		return MemoEntity.builder()
 				.id(memoDTO.getId())
 				.title(memoDTO.getTitle())
 				.content(memoDTO.getContent())
-				.visibility(memoDTO.isVisibility())
+				.visibility("public".equals(memoDTO.getVisibility()))
 				.build();
 	}
 

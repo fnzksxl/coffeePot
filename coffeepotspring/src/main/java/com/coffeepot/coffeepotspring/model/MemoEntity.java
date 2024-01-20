@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.hibernate.annotations.UuidGenerator;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
@@ -27,12 +28,12 @@ public class MemoEntity {
 	@UuidGenerator
 	private String id;
 
-	private Boolean visibility;
+	private String userId; // 이 메모 작성자의 id
 	private String title;
 	private String content;
+	private Boolean visibility;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
-	private String userId; // 이 메모 작성자의 id
 
 	// 다대다 관계는 명시적 테이블 생성
 	// users - scrap - memos
@@ -48,5 +49,9 @@ public class MemoEntity {
 	@Builder.Default
 	@OneToMany(mappedBy = "memoEntity")
 	private List<HashTagEntity> hashTags = new ArrayList<>();
+	
+	@Builder.Default
+	@OneToMany(mappedBy = "memoEntity", cascade = CascadeType.REMOVE)
+	private List<ImageDataEntity> images = new ArrayList<>();
 
 }

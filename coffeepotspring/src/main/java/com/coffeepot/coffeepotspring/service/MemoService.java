@@ -1,5 +1,6 @@
 package com.coffeepot.coffeepotspring.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,17 +30,16 @@ public class MemoService {
 		}
 	}
 	
-	public List<MemoEntity> create(final MemoEntity memoEntity) {
+	public MemoEntity create(final MemoEntity memoEntity) {
 		validate(memoEntity);
 		
 		if (memoEntity == null || memoEntity.getContent() == null) {
 			throw new RuntimeException("Invalid arguments");
 		}
-		memoRepository.save(memoEntity);
-		
-		return memoRepository.findByUserId(memoEntity.getUserId());
+		return memoRepository.save(memoEntity);
 	}
 	
+	// 자식 엔티티를 호출할 경우 메소드에 @Transactional을 추가해야 함
 	public List<MemoEntity> retrieveByUserId(final String userId) {
 		if (userId == null) {
 			throw new RuntimeException("Invalid arguments");
@@ -47,25 +47,28 @@ public class MemoService {
 		return memoRepository.findByUserId(userId);
 	}
 	
-	public List<MemoEntity> update(final MemoEntity memoEntity) {
+	public MemoEntity update(final MemoEntity memoEntity) {
 		validate(memoEntity);
 		
 		final Optional<MemoEntity> original = memoRepository.findById(memoEntity.getId());
+		
 		original.ifPresent(memo -> {
 			memo.setTitle(memoEntity.getTitle());
 			memo.setContent(memoEntity.getContent());
 			memo.setVisibility(memoEntity.getVisibility());
+			memo.setUpdatedAt(LocalDateTime.now());
 			memoRepository.save(memo);
 		});
 		
-		return retrieveByUserId(memoEntity.getUserId());
+		return memoRepository.findById(original.get().getId()).get();
 	}
 	
 	public List<MemoEntity> delete(final MemoEntity memoEntity) {
 		validate(memoEntity);
 		
 		try {
-			memoRepository.delete(memoEntity);
+			MemoEntity memoEntityToBeDeleted = memoRepository.findById(memoEntity.getId()).get();
+			memoRepository.delete(memoEntityToBeDeleted);
 		} catch (Exception e) {
 			log.error("Error deleting MemoEntity");
 			throw new RuntimeException("Error deleting MemoEntity" + memoEntity.getId());
