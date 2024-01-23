@@ -20,8 +20,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.coffeepot.coffeepotspring.dto.MemoDTO;
 import com.coffeepot.coffeepotspring.dto.ResponseDTO;
+import com.coffeepot.coffeepotspring.model.HashTagEntity;
 import com.coffeepot.coffeepotspring.model.ImageDataEntity;
 import com.coffeepot.coffeepotspring.model.MemoEntity;
+import com.coffeepot.coffeepotspring.service.HashTagService;
 import com.coffeepot.coffeepotspring.service.ImageService;
 import com.coffeepot.coffeepotspring.service.MemoService;
 
@@ -35,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MemoController {
 	
 	private final MemoService memoService;
+	private final HashTagService hashTagService;
 	private final ImageService imageService;
 	
 	private final String MEMO_IMAGE_BASE_PATH = "C:/Users/KWC/Desktop/PKNU/Y2023/CoffePot/coffeePot-BE/coffeepotspring/src/main/resources/memoimages/";
@@ -50,6 +53,8 @@ public class MemoController {
 					.createdAt(LocalDateTime.now())
 					.build();
 			MemoEntity createdMemoEntity = memoService.create(memoEntity);
+			
+			List<HashTagEntity> hashTagEntities = hashTagService.create(createdMemoEntity, memoDTO.getHashTags());
 
 			if (memoDTO.getUploadedImages() != null) {
 				List<ImageDataEntity> imageDataEntities = new ArrayList<>();
@@ -68,8 +73,9 @@ public class MemoController {
 				imageService.uploadImages(imageDataEntities);
 			}
 			
+			List<String> hashTags = hashTagEntities.stream().map(hashTag -> hashTag.getHashTag()).toList();
 			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(createdMemoEntity);
-			List<MemoDTO> responseMemoDTO = List.of(new MemoDTO(createdMemoEntity, imageUrisToBeDownloaded));
+			List<MemoDTO> responseMemoDTO = List.of(new MemoDTO(createdMemoEntity, hashTags, imageUrisToBeDownloaded));
 			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(responseMemoDTO).build();
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
@@ -83,8 +89,11 @@ public class MemoController {
 	public ResponseEntity<?> retrieveMemoList(@AuthenticationPrincipal String userId) {
 		List<MemoEntity> memoEntities = memoService.retrieveByUserId(userId);
 		List<MemoDTO> memoDTOs = memoEntities.stream().map(memoEntity -> {
+			List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> {
+				return entity.getHashTag();
+			}).toList();
 			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-			return new MemoDTO(memoEntity, imageUrisToBeDownloaded);
+			return new MemoDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
 		}).toList();
 		ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
 		return ResponseEntity.ok().body(response);
@@ -103,6 +112,8 @@ public class MemoController {
 			memoEntity.setUserId(userId);
 			MemoEntity updatedMemoEntity = memoService.update(memoEntity);
 			
+			List<HashTagEntity> hashTagEntities = hashTagService.update(updatedMemoEntity, memoDTO.getHashTags());
+			
 			imageService.deleteByMemoEntity(updatedMemoEntity);
 			if (memoDTO.getUploadedImages() != null) {
 				List<ImageDataEntity> imageDataEntities = new ArrayList<>();
@@ -120,8 +131,9 @@ public class MemoController {
 				}
 				imageService.uploadImages(imageDataEntities);
 			}
+			List<String> hashTags = hashTagEntities.stream().map(entity -> entity.getHashTag()).toList();
 			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-			List<MemoDTO> memoDTOs = List.of(new MemoDTO(updatedMemoEntity, imageUrisToBeDownloaded));
+			List<MemoDTO> memoDTOs = List.of(new MemoDTO(updatedMemoEntity, hashTags, imageUrisToBeDownloaded));
 			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
@@ -143,8 +155,9 @@ public class MemoController {
 			memoService.delete(memoEntity);
 			List<MemoEntity> memoEntities = memoService.retrieveByUserId(userId);
 			List<MemoDTO> memoDTOs = memoEntities.stream().map(entity -> {
+				List<String> hashTags = hashTagService.retrieveByMemoEntity(entity).stream().map(hashTagEntity -> hashTagEntity.getHashTag()).toList();
 				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(entity);
-				return new MemoDTO(entity, imageUrisToBeDownloaded);
+				return new MemoDTO(entity, hashTags, imageUrisToBeDownloaded);
 			}).toList();
 			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
 			return ResponseEntity.ok().body(response);

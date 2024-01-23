@@ -21,16 +21,18 @@ public class MemoDTO {
 	private String title;
 	private String content;
 	private String visibility; // 메모 공개 범위 public, private
+	private List<String> hashTags;
 	
 	private List<MultipartFile> uploadedImages;
 	
 	private List<String> imagsUris;
 	
-	public MemoDTO(final MemoEntity memoEntity, final List<String> imagesUri) {
+	public MemoDTO(final MemoEntity memoEntity, final List<String> hashTags, final List<String> imagesUri) {
 		this.id = memoEntity.getId();
 		this.title = memoEntity.getTitle();
 		this.content = memoEntity.getContent();
 		this.visibility = memoEntity.getVisibility() ? "public" : "private";
+		this.hashTags = hashTags;
 		this.imagsUris = imagesUri;
 	}
 	

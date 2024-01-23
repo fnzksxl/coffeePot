@@ -47,7 +47,7 @@ public class MemoEntity {
 	private List<UserLikeMemo> likers = new ArrayList<>();
 	
 	@Builder.Default
-	@OneToMany(mappedBy = "memoEntity")
+	@OneToMany(mappedBy = "memoEntity", cascade = CascadeType.REMOVE)
 	private List<HashTagEntity> hashTags = new ArrayList<>();
 	
 	@Builder.Default
