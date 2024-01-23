@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.coffeepot.coffeepotspring.model.ImageDataEntity;
@@ -34,6 +35,7 @@ public class ImageService {
 		return imageDataEntities.stream().map(image -> image.getSavedName()).toList();
 	}
 
+	@Transactional
 	public void deleteByMemoEntity(MemoEntity memoEntity) {
 		List<ImageDataEntity> imageDataEntities = imageRepository.findAllByMemoEntity(memoEntity);
 		imageRepository.deleteAll(imageDataEntities);

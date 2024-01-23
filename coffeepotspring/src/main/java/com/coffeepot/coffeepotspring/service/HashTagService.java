@@ -3,6 +3,7 @@ package com.coffeepot.coffeepotspring.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coffeepot.coffeepotspring.model.HashTagEntity;
 import com.coffeepot.coffeepotspring.model.MemoEntity;
@@ -32,6 +33,7 @@ public class HashTagService {
 		return hashTagRepository.findByMemoEntity(memoEntity);
 	}
 	
+	@Transactional
 	public List<HashTagEntity> update(MemoEntity memoEntity, List<String> hashTags) {
 		hashTagRepository.deleteByMemoEntity(memoEntity);
 		return create(memoEntity, hashTags);

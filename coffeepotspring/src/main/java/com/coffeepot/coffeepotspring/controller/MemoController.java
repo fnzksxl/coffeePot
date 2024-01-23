@@ -155,7 +155,8 @@ public class MemoController {
 			memoService.delete(memoEntity);
 			List<MemoEntity> memoEntities = memoService.retrieveByUserId(userId);
 			List<MemoDTO> memoDTOs = memoEntities.stream().map(entity -> {
-				List<String> hashTags = hashTagService.retrieveByMemoEntity(entity).stream().map(hashTagEntity -> hashTagEntity.getHashTag()).toList();
+				List<String> hashTags = hashTagService.retrieveByMemoEntity(entity).stream()
+						.map(hashTagEntity -> hashTagEntity.getHashTag()).toList();
 				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(entity);
 				return new MemoDTO(entity, hashTags, imageUrisToBeDownloaded);
 			}).toList();

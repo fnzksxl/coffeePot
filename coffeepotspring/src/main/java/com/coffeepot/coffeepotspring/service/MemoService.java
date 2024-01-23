@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coffeepot.coffeepotspring.model.MemoEntity;
 import com.coffeepot.coffeepotspring.persistence.MemoRepository;
@@ -63,6 +64,7 @@ public class MemoService {
 		return memoRepository.findById(original.get().getId()).get();
 	}
 	
+	@Transactional
 	public List<MemoEntity> delete(final MemoEntity memoEntity) {
 		validate(memoEntity);
 		
