@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class DummyDataInitializer {
 	
-	MemoRepository memoRepository;
+	private final MemoRepository memoRepository;
 	
 	@EventListener(ApplicationReadyEvent.class)
 	public void initDummyData() {
