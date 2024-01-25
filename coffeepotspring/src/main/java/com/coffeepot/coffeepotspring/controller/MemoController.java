@@ -1,11 +1,16 @@
 package com.coffeepot.coffeepotspring.controller;
 
+import java.awt.print.Pageable;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -85,9 +91,33 @@ public class MemoController {
 		}
 	}
 	
+	// TODO 페이징 처리
+	@GetMapping("/all")
+	public ResponseEntity<?> retrieveAllMemoList(
+			@RequestParam(defaultValue = "0") int pageNumber,
+			@RequestParam(defaultValue = "2") int pageSize,
+			@RequestParam(defaultValue = "createdAt") String sortBy) {
+		try {
+			log.info("retrieveAllMemoList");
+			Page<MemoEntity> memoPage = memoService.retrieveAll(pageNumber, pageSize, sortBy);
+			List<MemoDTO> memoDTOs = memoPage.get().map(memoEntity -> {
+				List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> entity.getHashTag())
+						.toList();
+				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
+				return new MemoDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
+			}).toList();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			String error = e.getMessage();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();
+			return ResponseEntity.badRequest().body(response);
+		}
+	}
+	
 	@GetMapping
-	public ResponseEntity<?> retrieveMemoList(@AuthenticationPrincipal String userId) {
-		List<MemoEntity> memoEntities = memoService.retrieveByUserId(userId);
+	public ResponseEntity<?> retrieveAllMemoList() {
+		List<MemoEntity> memoEntities = memoService.retrieveAll();
 		List<MemoDTO> memoDTOs = memoEntities.stream().map(memoEntity -> {
 			List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> {
 				return entity.getHashTag();
@@ -99,6 +129,19 @@ public class MemoController {
 		return ResponseEntity.ok().body(response);
 	}
 	
+	@GetMapping("/my-memo")
+	public ResponseEntity<?> retrieveMyMemoList(@AuthenticationPrincipal String userId) {
+		List<MemoEntity> memoEntities = memoService.retrieveByUserId(userId);
+		List<MemoDTO> memoDTOs = memoEntities.stream().map(memoEntity -> {
+			List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> {
+				return entity.getHashTag();
+			}).toList();
+			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
+			return new MemoDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
+		}).toList();
+		ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
+		return ResponseEntity.ok().body(response);
+	}
 	
 	@PutMapping
 	public ResponseEntity<?> updateMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoDTO memoDTO) {

@@ -4,6 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +43,15 @@ public class MemoService {
 			throw new RuntimeException("Invalid arguments");
 		}
 		return memoRepository.save(memoEntity);
+	}
+	
+	public List<MemoEntity> retrieveAll() {
+		return memoRepository.findAll();
+	}
+	
+	public Page<MemoEntity> retrieveAll(int pageNumber, int pageSize, String sortBy) {
+		Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+		return memoRepository.findAll(pageable);
 	}
 	
 	// 자식 엔티티를 호출할 경우 메소드에 @Transactional을 추가해야 함
