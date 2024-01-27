@@ -1,16 +1,11 @@
 package com.coffeepot.coffeepotspring.controller;
 
-import java.awt.print.Pageable;
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -91,15 +86,13 @@ public class MemoController {
 		}
 	}
 	
-	// TODO 페이징 처리
-	@GetMapping("/all")
+	@GetMapping("/page")
 	public ResponseEntity<?> retrieveAllMemoList(
-			@RequestParam(defaultValue = "0") int pageNumber,
-			@RequestParam(defaultValue = "2") int pageSize,
+			@RequestParam(defaultValue = "") String memoId,
+			@RequestParam(defaultValue = "5") int pageSize,
 			@RequestParam(defaultValue = "createdAt") String sortBy) {
 		try {
-			log.info("retrieveAllMemoList");
-			Page<MemoEntity> memoPage = memoService.retrieveAll(pageNumber, pageSize, sortBy);
+			Page<MemoEntity> memoPage = memoService.retrieveAll(memoId, pageSize, sortBy);
 			List<MemoDTO> memoDTOs = memoPage.get().map(memoEntity -> {
 				List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> entity.getHashTag())
 						.toList();

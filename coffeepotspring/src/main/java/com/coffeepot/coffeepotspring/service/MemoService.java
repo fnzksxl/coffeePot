@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,9 +48,17 @@ public class MemoService {
 		return memoRepository.findAll();
 	}
 	
-	public Page<MemoEntity> retrieveAll(int pageNumber, int pageSize, String sortBy) {
-		Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-		return memoRepository.findAll(pageable);
+	public Page<MemoEntity> retrieveAll(String memoId, int pageSize, String sortBy) {
+		Pageable pageable = PageRequest.of(0, pageSize, Sort.by(sortBy).descending());
+		if ("".equals(memoId)) {
+			Optional<MemoEntity> oMemoEntity = memoRepository.findFirstByOrderByCreatedAtDesc();
+			MemoEntity memoEntity = oMemoEntity.get();
+			return memoRepository.findAllByCreatedAtLessThanEqualOrderByCreatedAtDesc(memoEntity.getCreatedAt(), pageable);
+		} else {
+			Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
+			MemoEntity memoEntity = oMemoEntity.get();
+			return memoRepository.findAllByCreatedAtLessThanOrderByCreatedAtDesc(memoEntity.getCreatedAt(), pageable);
+		}
 	}
 	
 	// 자식 엔티티를 호출할 경우 메소드에 @Transactional을 추가해야 함
