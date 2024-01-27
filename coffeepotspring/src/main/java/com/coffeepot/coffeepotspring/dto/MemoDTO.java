@@ -21,6 +21,8 @@ public class MemoDTO {
 	private String title;
 	private String content;
 	private String visibility; // 메모 공개 범위 public, private
+	private String createdAt;
+	private String updatedAt;
 	private List<String> hashTags;
 	
 	private List<MultipartFile> uploadedImages;
@@ -32,6 +34,10 @@ public class MemoDTO {
 		this.title = memoEntity.getTitle();
 		this.content = memoEntity.getContent();
 		this.visibility = memoEntity.getVisibility() ? "public" : "private";
+		this.createdAt = memoEntity.getCreatedAt().toString();
+		if (memoEntity.getUpdatedAt() != null) {
+			this.updatedAt = memoEntity.getUpdatedAt().toString();
+		}
 		this.hashTags = hashTags;
 		this.imagsUris = imagesUri;
 	}
