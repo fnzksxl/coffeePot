@@ -29,9 +29,14 @@ public class DummyDataInitializer {
 			memoEntities.add(MemoEntity.builder()
 					.title("test" + i)
 					.content("test" + i)
-					.visibility(i % 2 == 0)
+					.visibility(Math.random() < 0.5)
 					.createdAt(LocalDateTime.now())
 					.build());
+			try {
+				Thread.sleep(3);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		memoRepository.saveAll(memoEntities);
 		log.info("Initializing dummy data is finished");
