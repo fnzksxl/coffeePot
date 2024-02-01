@@ -24,6 +24,7 @@ import com.coffeepot.coffeepotspring.dto.ResponseDTO;
 import com.coffeepot.coffeepotspring.model.HashTagEntity;
 import com.coffeepot.coffeepotspring.model.ImageDataEntity;
 import com.coffeepot.coffeepotspring.model.MemoEntity;
+import com.coffeepot.coffeepotspring.model.UserEntity;
 import com.coffeepot.coffeepotspring.service.HashTagService;
 import com.coffeepot.coffeepotspring.service.ImageService;
 import com.coffeepot.coffeepotspring.service.MemoService;
@@ -198,6 +199,54 @@ public class MemoController {
 			}).toList();
 			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
 			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			String error = e.getMessage();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();
+			return ResponseEntity.badRequest().body(response);
+		}
+	}
+	
+	@PostMapping("/like")
+	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+		try {
+			memoService.like(userId, memoId);
+			return ResponseEntity.ok(null);
+		} catch (Exception e) {
+			String error = e.getMessage();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();
+			return ResponseEntity.badRequest().body(response);
+		}
+	}
+	
+	@PostMapping("/scrap")
+	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+		try {
+			memoService.scrap(userId, memoId);
+			return ResponseEntity.ok(null);
+		} catch (Exception e) {
+			String error = e.getMessage();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();
+			return ResponseEntity.badRequest().body(response);
+		}
+	}
+	
+	@DeleteMapping("/like")
+	public ResponseEntity<?> unlikeMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+		try {
+			memoService.unlike(userId, memoId);
+			return ResponseEntity.ok(null);
+		} catch (Exception e) {
+			String error = e.getMessage();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();
+			return ResponseEntity.badRequest().body(response);
+		}
+	}
+	
+	@DeleteMapping("/scrap")
+	public ResponseEntity<?> unscrapMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+		try {
+			memoService.unscrap(userId, memoId);
+			return ResponseEntity.ok(null);
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();

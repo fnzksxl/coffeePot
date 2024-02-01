@@ -12,7 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coffeepot.coffeepotspring.model.MemoEntity;
+import com.coffeepot.coffeepotspring.model.UserEntity;
+import com.coffeepot.coffeepotspring.model.UserLikeMemo;
+import com.coffeepot.coffeepotspring.model.UserScrapMemo;
 import com.coffeepot.coffeepotspring.persistence.MemoRepository;
+import com.coffeepot.coffeepotspring.persistence.UserLikeMemoRepository;
+import com.coffeepot.coffeepotspring.persistence.UserRepository;
+import com.coffeepot.coffeepotspring.persistence.UserScrapMemoRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 public class MemoService {
 	
 	private final MemoRepository memoRepository;
+	private final UserRepository userRepository;
+	private final UserLikeMemoRepository userLikeMemoRepository;
+	private final UserScrapMemoRepository userScrapMemoRepository;
 	
 	private void validate(final MemoEntity memoEntity) {
 		if (memoEntity == null) {
@@ -98,6 +107,84 @@ public class MemoService {
 		}
 		
 		return retrieveByUserId(memoEntity.getUserId());
+	}
+	
+	public void like(final String userId, final String memoId) {
+		Optional<UserEntity> oUserEntity = userRepository.findById(userId);
+		Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
+		
+		if (oUserEntity.isPresent() && oMemoEntity.isPresent()) {
+			UserEntity userEntity = oUserEntity.get();
+			MemoEntity memoEntity = oMemoEntity.get();
+			
+			Optional<UserLikeMemo> oUserLikeMemo = userLikeMemoRepository.findByMemoLikerAndMemoEntity(userEntity, memoEntity);
+			oUserLikeMemo.ifPresentOrElse(userLikeMemo -> {
+				throw new RuntimeException("User already liked memo");
+			}, () -> {
+				UserLikeMemo userLikeMemo = UserLikeMemo.builder()
+						.memoLiker(userEntity)
+						.memoEntity(memoEntity)
+						.build();
+				userLikeMemoRepository.save(userLikeMemo);
+			});
+		}
+	}
+	
+	public void scrap(final String userId, final String memoId) {
+		Optional<UserEntity> oUserEntity = userRepository.findById(userId);
+		Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
+		
+		if (oUserEntity.isPresent() && oMemoEntity.isPresent()) {
+			UserEntity userEntity = oUserEntity.get();
+			MemoEntity memoEntity = oMemoEntity.get();
+			
+			Optional<UserScrapMemo> oUserScrapMemo = userScrapMemoRepository.findByMemoScraperAndMemoEntity(userEntity, memoEntity);
+			oUserScrapMemo.ifPresentOrElse(userLikeMemo -> {
+				throw new RuntimeException("User already scraped memo");
+			}, () -> {
+				UserScrapMemo userScrapMemo = UserScrapMemo.builder()
+						.memoScraper(userEntity)
+						.memoEntity(memoEntity)
+						.build();
+				userScrapMemoRepository.save(userScrapMemo);
+			});
+		}
+	}
+
+	@Transactional
+	public void unlike(String userId, String memoId) {
+		Optional<UserEntity> oUserEntity = userRepository.findById(userId);
+		Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
+		
+		if (oUserEntity.isPresent() && oMemoEntity.isPresent()) {
+			UserEntity userEntity = oUserEntity.get();
+			MemoEntity memoEntity = oMemoEntity.get();
+			
+			Optional<UserLikeMemo> oUserLikeMemo = userLikeMemoRepository.findByMemoLikerAndMemoEntity(userEntity, memoEntity);
+			oUserLikeMemo.ifPresentOrElse(userLikeMemo -> {
+				userLikeMemoRepository.delete(userLikeMemo);
+			}, () -> {
+				throw new RuntimeException("User did not like memo");
+			});
+		}
+	}
+
+	@Transactional
+	public void unscrap(String userId, String memoId) {
+		Optional<UserEntity> oUserEntity = userRepository.findById(userId);
+		Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
+		
+		if (oUserEntity.isPresent() && oMemoEntity.isPresent()) {
+			UserEntity userEntity = oUserEntity.get();
+			MemoEntity memoEntity = oMemoEntity.get();
+			
+			Optional<UserScrapMemo> oUserScrapMemo = userScrapMemoRepository.findByMemoScraperAndMemoEntity(userEntity, memoEntity);
+			oUserScrapMemo.ifPresentOrElse(userScrapMemo -> {
+				userScrapMemoRepository.delete(userScrapMemo);
+			}, () -> {
+				throw new RuntimeException("User did not scrap memo");
+			});
+		}
 	}
 
 }
