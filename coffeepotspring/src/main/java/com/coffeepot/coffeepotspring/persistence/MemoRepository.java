@@ -19,4 +19,9 @@ public interface MemoRepository extends JpaRepository<MemoEntity, String> {
 	Page<MemoEntity> findAllByCreatedAtLessThanEqualOrderByCreatedAtDesc(LocalDateTime createdAt, Pageable pageable);
 	Page<MemoEntity> findAllByCreatedAtLessThanOrderByCreatedAtDesc(LocalDateTime createdAt, Pageable pageable);
 
+	Optional<MemoEntity> findFirstByUserIdOrderByCreatedAtDesc(String userId);
+	
+	Page<MemoEntity> findAllByUserIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(String userId, LocalDateTime createdAt, Pageable pageable);
+	Page<MemoEntity> findAllByUserIdAndCreatedAtLessThanOrderByCreatedAtDesc(String userId, LocalDateTime createdAt, Pageable pageable);
+
 }

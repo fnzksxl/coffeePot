@@ -78,6 +78,19 @@ public class MemoService {
 		}
 		return memoRepository.findByUserId(userId);
 	}
+
+	public Page<MemoEntity> retrieveByUserId(String userId, String memoId, int pageSize, String sortBy) {
+		Pageable pageable = PageRequest.of(0, pageSize, Sort.by(sortBy).descending());
+		if ("".equals(memoId)) {
+			Optional<MemoEntity> oMemoEntity = memoRepository.findFirstByUserIdOrderByCreatedAtDesc(userId);
+			MemoEntity memoEntity = oMemoEntity.get();
+			return memoRepository.findAllByUserIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(userId, memoEntity.getCreatedAt(), pageable);
+		} else {
+			Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
+			MemoEntity memoEntity = oMemoEntity.get();
+			return memoRepository.findAllByUserIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(userId, memoEntity.getCreatedAt(), pageable);
+		}
+	}
 	
 	public MemoEntity retrieveById(final String memoId) {
 		return memoRepository.findById(memoId).get();
