@@ -23,11 +23,13 @@ public class MemoDTO {
 	private String visibility; // 메모 공개 범위 public, private
 	private String createdAt;
 	private String updatedAt;
+	private int likeCount;
+	private int scrapCount;
 	private List<String> hashTags;
 	
 	private List<MultipartFile> uploadedImages;
 	
-	private List<String> imagsUris;
+	private List<String> imagesUris;
 	
 	public MemoDTO(final MemoEntity memoEntity, final List<String> hashTags, final List<String> imagesUri) {
 		this.id = memoEntity.getId();
@@ -39,7 +41,7 @@ public class MemoDTO {
 			this.updatedAt = memoEntity.getUpdatedAt().toString();
 		}
 		this.hashTags = hashTags;
-		this.imagsUris = imagesUri;
+		this.imagesUris = imagesUri;
 	}
 	
 	public static MemoEntity toMemoEntity(final MemoDTO memoDTO) {
