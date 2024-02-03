@@ -34,6 +34,8 @@ public class MemoEntity {
 	private Boolean visibility;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
+	private Integer likeCount;
+	private Integer scrapCount;
 
 	// 다대다 관계는 명시적 테이블 생성
 	// users - scrap - memos

@@ -24,7 +24,6 @@ import com.coffeepot.coffeepotspring.dto.ResponseDTO;
 import com.coffeepot.coffeepotspring.model.HashTagEntity;
 import com.coffeepot.coffeepotspring.model.ImageDataEntity;
 import com.coffeepot.coffeepotspring.model.MemoEntity;
-import com.coffeepot.coffeepotspring.model.UserEntity;
 import com.coffeepot.coffeepotspring.service.HashTagService;
 import com.coffeepot.coffeepotspring.service.ImageService;
 import com.coffeepot.coffeepotspring.service.MemoService;
@@ -53,6 +52,8 @@ public class MemoController {
 					.content(memoDTO.getContent())
 					.visibility("public".equals(memoDTO.getVisibility()))
 					.createdAt(LocalDateTime.now())
+					.likeCount(0)
+					.scrapCount(0)
 					.build();
 			MemoEntity createdMemoEntity = memoService.create(memoEntity);
 			
@@ -74,7 +75,8 @@ public class MemoController {
 				}
 				imageService.uploadImages(imageDataEntities);
 			}
-			
+
+			createdMemoEntity = memoService.retrieveById(createdMemoEntity.getId());
 			List<String> hashTags = hashTagEntities.stream().map(hashTag -> hashTag.getHashTag()).toList();
 			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(createdMemoEntity);
 			List<MemoDTO> responseMemoDTO = List.of(new MemoDTO(createdMemoEntity, hashTags, imageUrisToBeDownloaded));

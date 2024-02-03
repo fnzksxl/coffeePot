@@ -42,6 +42,8 @@ public class MemoDTO {
 		}
 		this.hashTags = hashTags;
 		this.imagesUris = imagesUri;
+		this.likeCount = memoEntity.getLikeCount();
+		this.scrapCount = memoEntity.getScrapCount();
 	}
 	
 	public static MemoEntity toMemoEntity(final MemoDTO memoDTO) {

@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class MemoService {
 	
 	private final MemoRepository memoRepository;
@@ -78,6 +79,10 @@ public class MemoService {
 		return memoRepository.findByUserId(userId);
 	}
 	
+	public MemoEntity retrieveById(final String memoId) {
+		return memoRepository.findById(memoId).get();
+	}
+	
 	public MemoEntity update(final MemoEntity memoEntity) {
 		validate(memoEntity);
 		
@@ -94,7 +99,6 @@ public class MemoService {
 		return memoRepository.findById(original.get().getId()).get();
 	}
 	
-	@Transactional
 	public List<MemoEntity> delete(final MemoEntity memoEntity) {
 		validate(memoEntity);
 		
@@ -126,6 +130,8 @@ public class MemoService {
 						.memoEntity(memoEntity)
 						.build();
 				userLikeMemoRepository.save(userLikeMemo);
+				memoEntity.setLikeCount(memoEntity.getLikeCount() + 1);
+				memoRepository.save(memoEntity);
 			});
 		}
 	}
@@ -147,11 +153,12 @@ public class MemoService {
 						.memoEntity(memoEntity)
 						.build();
 				userScrapMemoRepository.save(userScrapMemo);
+				memoEntity.setScrapCount(memoEntity.getScrapCount() + 1);
+				memoRepository.save(memoEntity);
 			});
 		}
 	}
 
-	@Transactional
 	public void unlike(String userId, String memoId) {
 		Optional<UserEntity> oUserEntity = userRepository.findById(userId);
 		Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
@@ -163,13 +170,14 @@ public class MemoService {
 			Optional<UserLikeMemo> oUserLikeMemo = userLikeMemoRepository.findByMemoLikerAndMemoEntity(userEntity, memoEntity);
 			oUserLikeMemo.ifPresentOrElse(userLikeMemo -> {
 				userLikeMemoRepository.delete(userLikeMemo);
+				memoEntity.setLikeCount(memoEntity.getLikeCount() - 1);
+				memoRepository.save(memoEntity);
 			}, () -> {
 				throw new RuntimeException("User did not like memo");
 			});
 		}
 	}
 
-	@Transactional
 	public void unscrap(String userId, String memoId) {
 		Optional<UserEntity> oUserEntity = userRepository.findById(userId);
 		Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
@@ -181,6 +189,8 @@ public class MemoService {
 			Optional<UserScrapMemo> oUserScrapMemo = userScrapMemoRepository.findByMemoScraperAndMemoEntity(userEntity, memoEntity);
 			oUserScrapMemo.ifPresentOrElse(userScrapMemo -> {
 				userScrapMemoRepository.delete(userScrapMemo);
+				memoEntity.setScrapCount(memoEntity.getScrapCount() - 1);
+				memoRepository.save(memoEntity);
 			}, () -> {
 				throw new RuntimeException("User did not scrap memo");
 			});

@@ -31,6 +31,8 @@ public class DummyDataInitializer {
 					.content("test" + i)
 					.visibility(Math.random() < 0.5)
 					.createdAt(LocalDateTime.now())
+					.likeCount(0)
+					.scrapCount(0)
 					.build());
 			try {
 				Thread.sleep(3);
