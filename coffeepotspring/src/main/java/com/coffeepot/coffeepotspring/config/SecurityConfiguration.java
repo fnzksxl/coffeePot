@@ -47,7 +47,8 @@ public class SecurityConfiguration {
 				.requestMatchers(
 						new AntPathRequestMatcher("/"), // 이 경로들은 인증 안 해도 됨
 						new AntPathRequestMatcher("/auth/**"),
-						new AntPathRequestMatcher("/oauth2/**"))
+						new AntPathRequestMatcher("/oauth2/**"),
+						new AntPathRequestMatcher("/memo/page"))
 				.permitAll()
 				.anyRequest() // 그 외의 경로는 모두 인증해야 됨
 				.authenticated())
