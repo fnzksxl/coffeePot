@@ -93,19 +93,25 @@ public class TokenProvider {
 				Instant.now()
 				.plus(14, ChronoUnit.DAYS));
 		
-		String refreshToken = Jwts.builder()
+		String newRefreshToken = Jwts.builder()
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				.setSubject(userEntity.getUsername())
 				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
+		
+		jwtRepository.findByUserId(userEntity.getUsername())
+				.ifPresent((refreshToken) -> {
+					jwtRepository.delete(refreshToken);
+				});
+		
 		jwtRepository.save(RefreshToken.builder()
 				.userId(userEntity.getUsername())
-				.refreshToken(refreshToken)
+				.refreshToken(newRefreshToken)
 				.build());
 		
-		return refreshToken;
+		return newRefreshToken;
 	}
 	
 	public String createRefreshToken(final Authentication authentication) {
@@ -115,19 +121,25 @@ public class TokenProvider {
 				Instant.now()
 				.plus(14, ChronoUnit.DAYS));
 		
-		String refreshToken = Jwts.builder()
+		String newRefreshToken = Jwts.builder()
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				.setSubject(userPrincipal.getName())
 				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
+		
+		jwtRepository.findByUserId(userPrincipal.getName())
+				.ifPresent((refreshToken) -> {
+					jwtRepository.delete(refreshToken);
+				});
+		
 		jwtRepository.save(RefreshToken.builder()
 				.userId(userPrincipal.getName())
-				.refreshToken(refreshToken)
+				.refreshToken(newRefreshToken)
 				.build());
 		
-		return refreshToken;
+		return newRefreshToken;
 	}
 	
 	public String validateAndGetUserId(String token) {
