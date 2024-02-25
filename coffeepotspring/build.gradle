@@ -16,12 +16,16 @@ repositories {
 }
 
 dependencies {
+	annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 	annotationProcessor 'org.projectlombok:lombok'
 	
 	compileOnly 'org.projectlombok:lombok'
 	
 	developmentOnly 'org.springframework.boot:spring-boot-devtools' // 서버 자동 재시작
 	
+	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
 	// jjwt는 jjwt-api로 옮겨짐, jjwt-api 사용 시 jjwt-impl도 사용해야 함.
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	implementation 'io.jsonwebtoken:jjwt-gson:0.11.5'
@@ -44,4 +48,22 @@ tasks.named('bootBuildImage') {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+def generated = 'src/main/generated'
+
+tasks.withType(JavaCompile) {
+    options.getGeneratedSourceOutputDirectory().set(file(generated))
+}
+
+sourceSets {
+    main.java.srcDirs += [ generated ]
+}
+
+clean {
+    delete file(generated)
+}
+
+jar {
+    enabled = false
 }
