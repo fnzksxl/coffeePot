@@ -88,7 +88,7 @@ public class MemoService {
 		} else {
 			Optional<MemoEntity> oMemoEntity = memoRepository.findById(memoId);
 			MemoEntity memoEntity = oMemoEntity.get();
-			return memoRepository.findAllByUserIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(userId, memoEntity.getCreatedAt(), pageable);
+			return memoRepository.findAllByUserIdAndCreatedAtLessThanOrderByCreatedAtDesc(userId, memoEntity.getCreatedAt(), pageable);
 		}
 	}
 	
