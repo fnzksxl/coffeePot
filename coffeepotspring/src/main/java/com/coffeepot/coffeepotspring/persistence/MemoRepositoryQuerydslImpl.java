@@ -50,15 +50,15 @@ public class MemoRepositoryQuerydslImpl implements MemoRepositoryQuerydsl {
 		QMemoEntity memo = QMemoEntity.memoEntity;
 		QUserEntity user = QUserEntity.userEntity;
 		
-		MemoEntity memoEntity = jpaQueryFactory
-				.selectFrom(memo)
-				.where(memo.id.eq(memoId))
-				.fetchOne();
 		return jpaQueryFactory
 				.selectFrom(memo)
 				.leftJoin(user)
 				.on(memo.userId.eq(user.id))
-				.where(checkAllCond(memoSearchParamDTO), memo.createdAt.lt(memoEntity.getCreatedAt()))
+				.where(checkAllCond(memoSearchParamDTO), memo.createdAt.lt(
+						jpaQueryFactory.select(memo.createdAt)
+						.from(memo)
+						.where(memo.id.eq(memoId))
+						.fetchFirst()))
 				.orderBy(memo.createdAt.desc())
 				.limit(n)
 				.fetch();
