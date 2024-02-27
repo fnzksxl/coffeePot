@@ -211,7 +211,6 @@ public class MemoService {
 		}
 	}
 
-	// TODO 커서 기반 구현해야 함
 	public List<MemoEntity> retrieveByKeyword(MemoSearchParamDTO memoSearchParamDTO, String memoId, int pageSize, String sortBy) {
 		if ("".equals(memoId)) {
 			return memoRepository.findFirstNBySearchParamOrderByCreatedAtDesc(memoSearchParamDTO, (long) pageSize);
