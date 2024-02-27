@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coffeepot.coffeepotspring.dto.MemoSearchParamDTO;
 import com.coffeepot.coffeepotspring.model.MemoEntity;
 import com.coffeepot.coffeepotspring.model.UserEntity;
 import com.coffeepot.coffeepotspring.model.UserLikeMemo;
@@ -207,6 +208,15 @@ public class MemoService {
 			}, () -> {
 				throw new RuntimeException("User did not scrap memo");
 			});
+		}
+	}
+
+	// TODO 커서 기반 구현해야 함
+	public List<MemoEntity> retrieveByKeyword(MemoSearchParamDTO memoSearchParamDTO, String memoId, int pageSize, String sortBy) {
+		if ("".equals(memoId)) {
+			return memoRepository.findFirstNBySearchParamOrderByCreatedAtDesc(memoSearchParamDTO, (long) pageSize);
+		} else {
+			return memoRepository.findNBySearchParamOrderByCreatedAtDesc(memoSearchParamDTO, memoId, (long) pageSize);
 		}
 	}
 

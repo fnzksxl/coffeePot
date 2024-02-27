@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.coffeepot.coffeepotspring.dto.MemoDTO;
 import com.coffeepot.coffeepotspring.dto.ResponseDTO;
+import com.coffeepot.coffeepotspring.dto.MemoSearchParamDTO;
 import com.coffeepot.coffeepotspring.model.HashTagEntity;
 import com.coffeepot.coffeepotspring.model.ImageDataEntity;
 import com.coffeepot.coffeepotspring.model.MemoEntity;
@@ -57,7 +58,10 @@ public class MemoController {
 					.build();
 			MemoEntity createdMemoEntity = memoService.create(memoEntity);
 			
-			List<HashTagEntity> hashTagEntities = hashTagService.create(createdMemoEntity, memoDTO.getHashTags());
+			List<HashTagEntity> hashTagEntities = null;
+			if (memoDTO.getHashTags() != null) {
+				hashTagEntities = hashTagService.create(createdMemoEntity, memoDTO.getHashTags());
+			}
 
 			if (memoDTO.getUploadedImages() != null) {
 				List<ImageDataEntity> imageDataEntities = new ArrayList<>();
@@ -77,7 +81,10 @@ public class MemoController {
 			}
 
 			createdMemoEntity = memoService.retrieveById(createdMemoEntity.getId());
-			List<String> hashTags = hashTagEntities.stream().map(hashTag -> hashTag.getHashTag()).toList();
+			List<String> hashTags = null;
+			if (hashTagEntities != null) {
+				hashTags = hashTagEntities.stream().map(hashTag -> hashTag.getHashTag()).toList();
+			}
 			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(createdMemoEntity);
 			List<MemoDTO> responseMemoDTO = List.of(new MemoDTO(createdMemoEntity, hashTags, imageUrisToBeDownloaded));
 			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(responseMemoDTO).build();
@@ -160,6 +167,29 @@ public class MemoController {
 		}).toList();
 		ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
 		return ResponseEntity.ok().body(response);
+	}
+	
+	@GetMapping("/search")
+	public ResponseEntity<?> searchMemoListByTitle(
+			@ModelAttribute MemoSearchParamDTO memoSearchParamDTO,
+			@RequestParam(defaultValue = "") String memoId,
+			@RequestParam(defaultValue = "5") int pageSize,
+			@RequestParam(defaultValue = "createdAt") String sortBy) {
+		try {
+			List<MemoEntity> memoPage = memoService.retrieveByKeyword(memoSearchParamDTO, memoId, pageSize, sortBy);
+			List<MemoDTO> memoDTOs = memoPage.stream().map(memoEntity -> {
+				List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> entity.getHashTag())
+						.toList();
+				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
+				return new MemoDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
+			}).toList();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			String error = e.getMessage();
+			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();
+			return ResponseEntity.badRequest().body(response);
+		}
 	}
 	
 	@PutMapping

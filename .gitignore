@@ -1,6 +1,7 @@
 coffeepotspring/db/
 coffeepotspring/src/main/resources/application-dev.yml
 coffeepotspring/src/main/resources/memoimages/
+coffeepotspring/src/main/generated/
 
 ### eclipse ###
 .metadata
