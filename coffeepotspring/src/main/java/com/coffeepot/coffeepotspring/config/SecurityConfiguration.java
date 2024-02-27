@@ -49,7 +49,7 @@ public class SecurityConfiguration {
 						new AntPathRequestMatcher("/auth/**"),
 						new AntPathRequestMatcher("/oauth2/**"),
 						new AntPathRequestMatcher("/memo/page"),
-						new AntPathRequestMatcher("/memo/search"))
+						new AntPathRequestMatcher("/search/**"))
 				.permitAll()
 				.anyRequest() // 그 외의 경로는 모두 인증해야 됨
 				.authenticated())

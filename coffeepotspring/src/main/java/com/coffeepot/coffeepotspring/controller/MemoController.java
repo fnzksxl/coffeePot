@@ -169,29 +169,6 @@ public class MemoController {
 		return ResponseEntity.ok().body(response);
 	}
 	
-	@GetMapping("/search")
-	public ResponseEntity<?> searchMemoListByTitle(
-			@ModelAttribute MemoSearchParamDTO memoSearchParamDTO,
-			@RequestParam(defaultValue = "") String memoId,
-			@RequestParam(defaultValue = "5") int pageSize,
-			@RequestParam(defaultValue = "createdAt") String sortBy) {
-		try {
-			List<MemoEntity> memoPage = memoService.retrieveByKeyword(memoSearchParamDTO, memoId, pageSize, sortBy);
-			List<MemoDTO> memoDTOs = memoPage.stream().map(memoEntity -> {
-				List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> entity.getHashTag())
-						.toList();
-				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-				return new MemoDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
-			}).toList();
-			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().data(memoDTOs).build();
-			return ResponseEntity.ok().body(response);
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoDTO> response = ResponseDTO.<MemoDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
-	}
-	
 	@PutMapping
 	public ResponseEntity<?> updateMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoDTO memoDTO) {
 		try {
