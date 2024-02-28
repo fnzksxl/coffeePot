@@ -213,10 +213,10 @@ public class MemoController {
 	}
 	
 	@DeleteMapping
-	public ResponseEntity<?> deleteMemo(@AuthenticationPrincipal String userId, @RequestBody MemoDTO memoDTO) {
+	public ResponseEntity<?> deleteMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
 		try {
 			MemoEntity memoEntity = MemoEntity.builder()
-					.id(memoDTO.getId())
+					.id(memoId)
 					.userId(userId)
 					.build();
 			imageService.deleteByMemoEntity(memoEntity);
