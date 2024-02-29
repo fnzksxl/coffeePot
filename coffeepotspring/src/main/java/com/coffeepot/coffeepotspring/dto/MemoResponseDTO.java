@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class MemoDTO {
+public class MemoResponseDTO {
 	
 	private String id;
 	private String title;
@@ -26,12 +26,9 @@ public class MemoDTO {
 	private int likeCount;
 	private int scrapCount;
 	private List<String> hashTags;
-	
-	private List<MultipartFile> uploadedImages;
-	
 	private List<String> imagesUris;
 	
-	public MemoDTO(final MemoEntity memoEntity, final List<String> hashTags, final List<String> imagesUri) {
+	public MemoResponseDTO(final MemoEntity memoEntity, final List<String> hashTags, final List<String> imagesUri) {
 		this.id = memoEntity.getId();
 		this.title = memoEntity.getTitle();
 		this.content = memoEntity.getContent();
@@ -44,15 +41,6 @@ public class MemoDTO {
 		this.imagesUris = imagesUri;
 		this.likeCount = memoEntity.getLikeCount();
 		this.scrapCount = memoEntity.getScrapCount();
-	}
-	
-	public static MemoEntity toMemoEntity(final MemoDTO memoDTO) {
-		return MemoEntity.builder()
-				.id(memoDTO.getId())
-				.title(memoDTO.getTitle())
-				.content(memoDTO.getContent())
-				.visibility("public".equals(memoDTO.getVisibility()))
-				.build();
 	}
 
 }
