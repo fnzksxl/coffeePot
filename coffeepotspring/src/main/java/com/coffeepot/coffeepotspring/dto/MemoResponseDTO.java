@@ -2,8 +2,6 @@ package com.coffeepot.coffeepotspring.dto;
 
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import com.coffeepot.coffeepotspring.model.MemoEntity;
 
 import lombok.AllArgsConstructor;
