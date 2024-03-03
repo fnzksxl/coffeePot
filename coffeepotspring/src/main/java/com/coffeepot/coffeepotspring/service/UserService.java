@@ -93,16 +93,16 @@ public class UserService {
 				.build();
 	}
 	
-	public PasswordReissueResponseDTO getByPasswordInfo(UserRequestDTO userRequestDTO) {
+	public PasswordReissueResponseDTO getByPasswordInfo(UserRequestDTO userRequestDTO, PasswordEncoder passwordEncoder) {
 		validatePasswordInfo(userRequestDTO);
 		String newPassword = reissuePassword();
 		
 		UserEntity originalUserEntity = userRepository.findByUsername(userRequestDTO.getUsername());
-		originalUserEntity.updatePassword(newPassword);
-		UserEntity userEntity = userRepository.save(originalUserEntity);
+		originalUserEntity.updatePassword(passwordEncoder.encode(newPassword));
+		userRepository.save(originalUserEntity);
 		
 		return PasswordReissueResponseDTO.builder()
-				.password(userEntity.getPassword())
+				.password(newPassword)
 				.build();
 	}
 	

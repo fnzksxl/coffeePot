@@ -87,7 +87,7 @@ public class UserController {
 	public ResponseEntity<?> findPassword(@RequestBody UserRequestDTO userRequestDTO) {
 		// 비밀번호 이메일로 재발급하기
 		try {
-			PasswordReissueResponseDTO responseDTO = userService.getByPasswordInfo(userRequestDTO);
+			PasswordReissueResponseDTO responseDTO = userService.getByPasswordInfo(userRequestDTO, passwordEncoder);
 			return ResponseEntity.ok().body(responseDTO);
 		} catch (Exception e) {
 			ResponseDTO responseDTO = ResponseDTO.builder()
