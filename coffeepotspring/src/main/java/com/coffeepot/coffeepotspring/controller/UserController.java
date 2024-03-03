@@ -17,7 +17,6 @@ import com.coffeepot.coffeepotspring.dto.ResponseDTO;
 import com.coffeepot.coffeepotspring.dto.UserRequestDTO;
 import com.coffeepot.coffeepotspring.dto.UserSigninResponseDTO;
 import com.coffeepot.coffeepotspring.dto.UserSignupResponseDTO;
-import com.coffeepot.coffeepotspring.security.TokenProvider;
 import com.coffeepot.coffeepotspring.service.UserService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
 	
 	private final UserService userService;
-	private final TokenProvider tokenProvider;
 	private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 	
 	@PostMapping("/signup")
