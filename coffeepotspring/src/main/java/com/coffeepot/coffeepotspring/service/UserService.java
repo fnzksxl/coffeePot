@@ -1,12 +1,21 @@
 package com.coffeepot.coffeepotspring.service;
 
 import java.util.List;
+import java.util.Random;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.coffeepot.coffeepotspring.dto.AccountRecoveryResponseDTO;
+import com.coffeepot.coffeepotspring.dto.JWTReissueResponseDTO;
+import com.coffeepot.coffeepotspring.dto.PasswordReissueResponseDTO;
+import com.coffeepot.coffeepotspring.dto.UserRequestDTO;
+import com.coffeepot.coffeepotspring.dto.UserSigninResponseDTO;
+import com.coffeepot.coffeepotspring.dto.UserSignupResponseDTO;
 import com.coffeepot.coffeepotspring.model.UserEntity;
 import com.coffeepot.coffeepotspring.persistence.UserRepository;
+import com.coffeepot.coffeepotspring.security.TokenProvider;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,64 +24,112 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-	
+
+	private final TokenProvider tokenProvider;
 	private final UserRepository userRepository;
 	
-	public UserEntity create(final UserEntity userEntity) {
-		if (userEntity == null || userEntity.getUsername() == null) {
+	public UserSignupResponseDTO create(final UserRequestDTO userRequestDTO, PasswordEncoder passwordEncoder) {
+		if (userRequestDTO == null || userRequestDTO.getUsername() == null) {
 			throw new RuntimeException("Invalid arguments");
 		}
-		final String username = userEntity.getUsername();
-		if (userRepository.existsByUsername(username)) {
-			log.warn("Username already exsits {}", username);
-			throw new RuntimeException("Username already exists");
+		if (userRequestDTO.getPassword() == null) {
+			throw new RuntimeException("Invalid Password value.");
 		}
 		
-		return userRepository.save(userEntity);
+		final String username = userRequestDTO.getUsername();
+		if (userRepository.existsByUsername(username)) {
+			log.warn("Username already exists {}", username);
+			throw new RuntimeException("Username already exists");
+		}
+		final String password = userRequestDTO.getPassword();
+		
+		UserEntity userEntity = UserEntity.builder()
+				.username(username)
+				.password(passwordEncoder.encode(password))
+				.email(userRequestDTO.getEmail())
+				.build();
+		UserEntity createdUserEntity = userRepository.save(userEntity);
+		
+		return UserSignupResponseDTO.builder()
+				.id(createdUserEntity.getId())
+				.username(createdUserEntity.getUsername())
+				.build();
 	}
 	
-	public UserEntity getByCredentials(final String username,
-			final String password, final PasswordEncoder encoder) {
-		final UserEntity originalUser = userRepository.findByUsername(username);
+	public UserSigninResponseDTO signin(final UserRequestDTO userRequestDTO, final PasswordEncoder encoder) {
+		final UserEntity originalUser = userRepository.findByUsername(userRequestDTO.getUsername());
 		
-		// matches 메소드 이용해 패스워드가 같은지 확인
-		if (originalUser != null &&
-				encoder.matches(password, originalUser.getPassword())) {
-			return originalUser;
+		if (originalUser != null && encoder.matches(userRequestDTO.getPassword(), originalUser.getPassword())) {
+			String accessToken = tokenProvider.createAccessToken(originalUser.getId());
+			String refreshToken = tokenProvider.createRefreshToken(originalUser.getId());
+			
+			return UserSigninResponseDTO.builder()
+					.id(originalUser.getId())
+					.username(originalUser.getUsername())
+					.accessToken(accessToken)
+					.refreshToken(refreshToken)
+					.build();
 		}
 		return null;
 	}
 	
-	public UserEntity findById(String userId) {
-		return userRepository.findById(userId)
-				.orElseThrow(() -> new IllegalArgumentException("Unexpected User"));
+	public JWTReissueResponseDTO reissueAccessToken(final UserRequestDTO userRequestDTO, final String refreshToken) {
+		UserEntity userEntity = userRepository.findByUsername(userRequestDTO.getUsername());
+		String accessToken = tokenProvider.validateAndReissueAccessToken(refreshToken, userEntity.getId());
+		return JWTReissueResponseDTO.builder()
+				.id(userEntity.getId())
+				.username(userEntity.getUsername())
+				.accessToken(accessToken)
+				.build();
 	}
-
+	
 	// TODO 아이디 찾기
 	// 가입 정보 정해지면 구체적으로 구현하기
 	// 일단 이메일로 임시 구현
-	public UserEntity getByUsernameInfo(List<String> usernameInfo) {
-		return userRepository.findByEmail(usernameInfo.get(0))
-				.orElseThrow(() -> new IllegalArgumentException("Unexpected Username Info"));
-		// 이후 다른 정보로 matches 검사...
+	public AccountRecoveryResponseDTO getByUsernameInfo(UserRequestDTO userRequestDTO) {
+		UserEntity userEntity = userRepository.findByEmail(userRequestDTO.getEmail()).orElseThrow();
+		return AccountRecoveryResponseDTO.builder()
+				.username(userEntity.getUsername())
+				.build();
 	}
-
-	public UserEntity getByPasswordInfo(List<String> passwordInfo) {
-		return userRepository.findByEmail(passwordInfo.get(0))
-				.orElseThrow(() -> new IllegalArgumentException("Unexpected Password Info"));
-		// 이후 다른 정보로 matches 검사...
+	
+	public PasswordReissueResponseDTO getByPasswordInfo(UserRequestDTO userRequestDTO) {
+		validatePasswordInfo(userRequestDTO);
+		String newPassword = reissuePassword();
+		
+		UserEntity originalUserEntity = userRepository.findByUsername(userRequestDTO.getUsername());
+		originalUserEntity.updatePassword(newPassword);
+		UserEntity userEntity = userRepository.save(originalUserEntity);
+		
+		return PasswordReissueResponseDTO.builder()
+				.password(userEntity.getPassword())
+				.build();
 	}
-
-	public void updatePassword(String username, String password, PasswordEncoder passwordEncoder) {
-		UserEntity userEntity = userRepository.findByUsername(username);
-		userEntity.updatePassword(password);
-		userRepository.save(userEntity);
+	
+	private void validatePasswordInfo(UserRequestDTO userRequestDTO) {
+		if (userRequestDTO.getUsername() != null && !userRepository.existsByUsername(userRequestDTO.getUsername())) {
+			throw new RuntimeException("Invalid username");
+		}
+		if (userRequestDTO.getEmail() != null && !userRepository.existsByEmail(userRequestDTO.getEmail())) {
+			throw new RuntimeException("Invalid email");
+		}
 	}
-
-	public UserEntity updatePassword(UserEntity userEntity) {
-		UserEntity originalUser = userRepository.findByUsername(userEntity.getUsername());
-		originalUser.updatePassword(userEntity.getPassword());
-		return userRepository.save(originalUser);
+	
+	private String reissuePassword() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 10; i++) {
+			int charSelector = (int) (Math.random() * 62);
+			
+			if (charSelector < 10) {
+				sb.append((char) ('0' + (Math.random() * 10)));
+			} else if (charSelector < 36) {
+				sb.append((char) ('A' + (Math.random() * 26)));
+			} else {
+				sb.append((char) ('a' + (Math.random() * 26)));
+			}
+		}
+		
+		return sb.toString();
 	}
 
 }
