@@ -70,7 +70,7 @@ public class UserService {
 					.refreshToken(refreshToken)
 					.build();
 		}
-		return null;
+		throw new RuntimeException("Signin failed");
 	}
 	
 	public JWTReissueResponseDTO reissueAccessToken(final UserRequestDTO userRequestDTO, final String refreshToken) {
