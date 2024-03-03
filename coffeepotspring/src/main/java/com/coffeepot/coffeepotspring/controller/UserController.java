@@ -61,13 +61,20 @@ public class UserController {
 
 	@PatchMapping("/reissue")
 	public ResponseEntity<?> reissueAccessToken(@RequestBody UserRequestDTO userRequestDTO, HttpServletRequest request) {
-		String refreshToken = request.getHeader("Authorization");
-		if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
-			refreshToken = refreshToken.substring(7);
+		try {
+			String refreshToken = request.getHeader("Authorization");
+			if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
+				refreshToken = refreshToken.substring(7);
+			}
+			
+			JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
+			return ResponseEntity.ok().body(jwtReissueResponseDTO);
+		} catch (Exception e) {
+			ResponseDTO responseDTO = ResponseDTO.builder()
+					.error(e.getMessage())
+					.build();
+			return ResponseEntity.badRequest().body(responseDTO);
 		}
-		
-		JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
-		return ResponseEntity.ok().body(jwtReissueResponseDTO);
 	}
 	
 	@PostMapping("/find-username")

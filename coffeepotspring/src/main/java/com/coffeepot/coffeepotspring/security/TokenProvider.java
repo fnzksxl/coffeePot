@@ -10,7 +10,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import com.coffeepot.coffeepotspring.model.RefreshToken;
-import com.coffeepot.coffeepotspring.model.UserEntity;
 import com.coffeepot.coffeepotspring.persistence.JwtRepository;
 
 import io.jsonwebtoken.Claims;
@@ -158,9 +157,8 @@ public class TokenProvider {
 		if (oRefreshToken.isPresent()) {
 			String accessToken = createAccessToken(userId);
 			return accessToken;
-		} else {
-		    return null;
 		}
+		throw new RuntimeException("Access token validation and reissue failed");
 	}
 
 }
