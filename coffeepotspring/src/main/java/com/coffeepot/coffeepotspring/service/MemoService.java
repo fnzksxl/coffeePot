@@ -220,12 +220,19 @@ public class MemoService {
 		});
 	}
 
-	public List<MemoEntity> retrieveByKeyword(MemoSearchParamDTO memoSearchParamDTO, String memoId, int pageSize, String sortBy) {
+	public List<MemoResponseDTO> retrieveByKeyword(MemoSearchParamDTO memoSearchParamDTO, String memoId, int pageSize, String sortBy) {
+		List<MemoEntity> memoEntities = null;
 		if ("".equals(memoId)) {
-			return memoRepository.findFirstNBySearchParamOrderByCreatedAtDesc(memoSearchParamDTO, (long) pageSize);
+			memoEntities = memoRepository.findFirstNBySearchParamOrderByCreatedAtDesc(memoSearchParamDTO, (long) pageSize);
 		} else {
-			return memoRepository.findNBySearchParamOrderByCreatedAtDesc(memoSearchParamDTO, memoId, (long) pageSize);
+			memoEntities = memoRepository.findNBySearchParamOrderByCreatedAtDesc(memoSearchParamDTO, memoId, (long) pageSize);
 		}
+		
+		return memoEntities.stream().map(memoEntity -> {
+			List<HashTagEntity> hashTagEntities = hashTagService.retrieveByMemoEntity(memoEntity);
+			List<ImageDataEntity> imageDataEntities = imageService.retrieveByMemoEntity(memoEntity);
+			return MemoResponseDTO.of(memoEntity, hashTagEntities, imageDataEntities);
+		}).toList();
 	}
 
 }

@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coffeepot.coffeepotspring.dto.MemoResponseDTO;
 import com.coffeepot.coffeepotspring.dto.MemoSearchParamDTO;
 import com.coffeepot.coffeepotspring.dto.ResponseDTO;
-import com.coffeepot.coffeepotspring.model.MemoEntity;
-import com.coffeepot.coffeepotspring.service.HashTagService;
-import com.coffeepot.coffeepotspring.service.ImageService;
 import com.coffeepot.coffeepotspring.service.MemoService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,8 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 public class SearchController {
 	
 	private final MemoService memoService;
-	private final HashTagService hashTagService;
-	private final ImageService imageService;
 	
 	@GetMapping("/memo")
 	public ResponseEntity<?> searchMemoList(
@@ -37,14 +32,8 @@ public class SearchController {
 			@RequestParam(defaultValue = "5") int pageSize,
 			@RequestParam(defaultValue = "createdAt") String sortBy) {
 		try {
-			List<MemoEntity> memoPage = memoService.retrieveByKeyword(memoSearchParamDTO, memoId, pageSize, sortBy);
-			List<MemoResponseDTO> memoDTOs = memoPage.stream().map(memoEntity -> {
-				List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> entity.getHashTag())
-						.toList();
-				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-				return new MemoResponseDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
-			}).toList();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(memoDTOs).build();
+			List<MemoResponseDTO> responseDTOs = memoService.retrieveByKeyword(memoSearchParamDTO, memoId, pageSize, sortBy);
+			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
 			String error = e.getMessage();
