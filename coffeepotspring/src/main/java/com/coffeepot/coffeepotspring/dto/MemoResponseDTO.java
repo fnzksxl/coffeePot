@@ -28,21 +28,6 @@ public class MemoResponseDTO {
 	private List<String> hashTags;
 	private List<String> imagesUris;
 	
-	public MemoResponseDTO(final MemoEntity memoEntity, final List<String> hashTags, final List<String> imagesUri) {
-		this.id = memoEntity.getId();
-		this.title = memoEntity.getTitle();
-		this.content = memoEntity.getContent();
-		this.visibility = memoEntity.getVisibility() ? "public" : "private";
-		this.createdAt = memoEntity.getCreatedAt().toString();
-		if (memoEntity.getUpdatedAt() != null) {
-			this.updatedAt = memoEntity.getUpdatedAt().toString();
-		}
-		this.hashTags = hashTags;
-		this.imagesUris = imagesUri;
-		this.likeCount = memoEntity.getLikeCount();
-		this.scrapCount = memoEntity.getScrapCount();
-	}
-	
 	public static MemoResponseDTO of(final MemoEntity memoEntity, final List<HashTagEntity> hashTagEntities,
 			final List<ImageDataEntity> imageDataEntities) {
 		return MemoResponseDTO.builder()
