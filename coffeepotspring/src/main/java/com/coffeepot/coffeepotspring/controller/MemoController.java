@@ -1,31 +1,24 @@
 package com.coffeepot.coffeepotspring.controller;
 
-import java.io.File;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.coffeepot.coffeepotspring.dto.MemoResponseDTO;
 import com.coffeepot.coffeepotspring.dto.MemoRequestDTO;
+import com.coffeepot.coffeepotspring.dto.MemoResponseDTO;
 import com.coffeepot.coffeepotspring.dto.ResponseDTO;
-import com.coffeepot.coffeepotspring.model.HashTagEntity;
-import com.coffeepot.coffeepotspring.model.ImageDataEntity;
-import com.coffeepot.coffeepotspring.model.MemoEntity;
-import com.coffeepot.coffeepotspring.service.HashTagService;
-import com.coffeepot.coffeepotspring.service.ImageService;
 import com.coffeepot.coffeepotspring.service.MemoService;
 
 import lombok.RequiredArgsConstructor;
@@ -38,55 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 public class MemoController {
 	
 	private final MemoService memoService;
-	private final HashTagService hashTagService;
-	private final ImageService imageService;
-	
-	private final String MEMO_IMAGE_BASE_PATH = "C:/Users/KWC/Desktop/PKNU/Y2023/CoffePot/coffeePot-BE/coffeepotspring/src/main/resources/memoimages/";
 	
 	@PostMapping
 	public ResponseEntity<?> createMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoRequestDTO memoRequestDTO) {
 		try {
-			MemoEntity memoEntity = MemoEntity.builder()
-					.userId(userId)
-					.title(memoRequestDTO.getTitle())
-					.content(memoRequestDTO.getContent())
-					.visibility("public".equals(memoRequestDTO.getVisibility()))
-					.createdAt(LocalDateTime.now())
-					.likeCount(0)
-					.scrapCount(0)
-					.build();
-			MemoEntity createdMemoEntity = memoService.create(memoEntity);
-			
-			List<HashTagEntity> hashTagEntities = null;
-			if (memoRequestDTO.getHashTags() != null) {
-				hashTagEntities = hashTagService.create(createdMemoEntity, memoRequestDTO.getHashTags());
-			}
-
-			if (memoRequestDTO.getUploadedImages() != null) {
-				List<ImageDataEntity> imageDataEntities = new ArrayList<>();
-				for (MultipartFile multipartFile : memoRequestDTO.getUploadedImages()) {
-					String savedName = createdMemoEntity.getId() + "_" + System.currentTimeMillis() + "_" + multipartFile.getOriginalFilename();
-					File savedFile = new File(MEMO_IMAGE_BASE_PATH + savedName);
-					multipartFile.transferTo(savedFile);
-					
-					imageDataEntities.add(ImageDataEntity.builder()
-							.memoEntity(createdMemoEntity)
-							.originalName(multipartFile.getOriginalFilename())
-							.savedName(savedName)
-							.type(multipartFile.getContentType())
-							.build());
-				}
-				imageService.uploadImages(imageDataEntities);
-			}
-
-			createdMemoEntity = memoService.retrieveById(createdMemoEntity.getId());
-			List<String> hashTags = null;
-			if (hashTagEntities != null) {
-				hashTags = hashTagEntities.stream().map(hashTag -> hashTag.getHashTag()).toList();
-			}
-			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(createdMemoEntity);
-			List<MemoResponseDTO> responseMemoDTO = List.of(new MemoResponseDTO(createdMemoEntity, hashTags, imageUrisToBeDownloaded));
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseMemoDTO).build();
+			List<MemoResponseDTO> responseDTOs = List.of(memoService.create(userId, memoRequestDTO));
+			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
 			String error = e.getMessage();
@@ -101,34 +51,14 @@ public class MemoController {
 			@RequestParam(defaultValue = "5") int pageSize,
 			@RequestParam(defaultValue = "createdAt") String sortBy) {
 		try {
-			Page<MemoEntity> memoPage = memoService.retrieveAll(memoId, pageSize, sortBy);
-			List<MemoResponseDTO> memoDTOs = memoPage.get().map(memoEntity -> {
-				List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> entity.getHashTag())
-						.toList();
-				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-				return new MemoResponseDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
-			}).toList();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(memoDTOs).build();
+			List<MemoResponseDTO> responseDTOs = memoService.retrieve(memoId, pageSize, sortBy);
+			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
 			return ResponseEntity.badRequest().body(response);
 		}
-	}
-	
-	@GetMapping
-	public ResponseEntity<?> retrieveAllMemoList() {
-		List<MemoEntity> memoEntities = memoService.retrieveAll();
-		List<MemoResponseDTO> memoDTOs = memoEntities.stream().map(memoEntity -> {
-			List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> {
-				return entity.getHashTag();
-			}).toList();
-			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-			return new MemoResponseDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
-		}).toList();
-		ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(memoDTOs).build();
-		return ResponseEntity.ok().body(response);
 	}
 	
 	@GetMapping("/my-memo-page")
@@ -138,71 +68,21 @@ public class MemoController {
 			@RequestParam(defaultValue = "5") int pageSize,
 			@RequestParam(defaultValue = "createdAt") String sortBy) {
 		try {
-			Page<MemoEntity> memoPage = memoService.retrieveByUserId(userId, memoId, pageSize, sortBy);
-			List<MemoResponseDTO> memoDTOs = memoPage.get().map(memoEntity -> {
-				List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> entity.getHashTag())
-						.toList();
-				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-				return new MemoResponseDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
-			}).toList();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(memoDTOs).build();
+			List<MemoResponseDTO> responseDTOs = memoService.retrieveMyMemoPage(userId, memoId, pageSize, sortBy);
+			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
 			return ResponseEntity.badRequest().body(response);
 		}
-	}
-	
-	@GetMapping("/my-memo")
-	public ResponseEntity<?> retrieveMyMemoList(@AuthenticationPrincipal String userId) {
-		List<MemoEntity> memoEntities = memoService.retrieveByUserId(userId);
-		List<MemoResponseDTO> memoDTOs = memoEntities.stream().map(memoEntity -> {
-			List<String> hashTags = hashTagService.retrieveByMemoEntity(memoEntity).stream().map(entity -> {
-				return entity.getHashTag();
-			}).toList();
-			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-			return new MemoResponseDTO(memoEntity, hashTags, imageUrisToBeDownloaded);
-		}).toList();
-		ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(memoDTOs).build();
-		return ResponseEntity.ok().body(response);
 	}
 	
 	@PutMapping
 	public ResponseEntity<?> updateMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoRequestDTO memoRequestDTO) {
 		try {
-			MemoEntity memoEntity = MemoEntity.builder()
-					.id(memoRequestDTO.getId())
-					.title(memoRequestDTO.getTitle())
-					.content(memoRequestDTO.getContent())
-					.visibility("public".equals(memoRequestDTO.getVisibility()))
-					.build();
-			memoEntity.setUserId(userId);
-			MemoEntity updatedMemoEntity = memoService.update(memoEntity);
-			
-			List<HashTagEntity> hashTagEntities = hashTagService.update(updatedMemoEntity, memoRequestDTO.getHashTags());
-			
-			imageService.deleteByMemoEntity(updatedMemoEntity);
-			if (memoRequestDTO.getUploadedImages() != null) {
-				List<ImageDataEntity> imageDataEntities = new ArrayList<>();
-				for (MultipartFile multipartFile : memoRequestDTO.getUploadedImages()) {
-					String savedName = updatedMemoEntity.getId() + "_" + System.currentTimeMillis() + "_" + multipartFile.getOriginalFilename();
-					File savedFile = new File(MEMO_IMAGE_BASE_PATH + savedName);
-					multipartFile.transferTo(savedFile);
-					
-					imageDataEntities.add(ImageDataEntity.builder()
-							.memoEntity(updatedMemoEntity)
-							.originalName(multipartFile.getOriginalFilename())
-							.savedName(savedName)
-							.type(multipartFile.getContentType())
-							.build());
-				}
-				imageService.uploadImages(imageDataEntities);
-			}
-			List<String> hashTags = hashTagEntities.stream().map(entity -> entity.getHashTag()).toList();
-			List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(memoEntity);
-			List<MemoResponseDTO> memoDTOs = List.of(new MemoResponseDTO(updatedMemoEntity, hashTags, imageUrisToBeDownloaded));
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(memoDTOs).build();
+			List<MemoResponseDTO> responseDTOs = List.of(memoService.update(userId, memoRequestDTO)); 
+			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
 			String error = e.getMessage();
@@ -211,25 +91,12 @@ public class MemoController {
 		}
 	}
 	
-	@DeleteMapping
-	public ResponseEntity<?> deleteMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+	@DeleteMapping("/{memoId}")
+	public ResponseEntity<?> deleteMemo(
+			@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		try {
-			MemoEntity memoEntity = MemoEntity.builder()
-					.id(memoId)
-					.userId(userId)
-					.build();
-			imageService.deleteByMemoEntity(memoEntity);
-			
-			memoService.delete(memoEntity);
-			List<MemoEntity> memoEntities = memoService.retrieveByUserId(userId);
-			List<MemoResponseDTO> memoDTOs = memoEntities.stream().map(entity -> {
-				List<String> hashTags = hashTagService.retrieveByMemoEntity(entity).stream()
-						.map(hashTagEntity -> hashTagEntity.getHashTag()).toList();
-				List<String> imageUrisToBeDownloaded = imageService.retrieveSavedNamesByMemoEntity(entity);
-				return new MemoResponseDTO(entity, hashTags, imageUrisToBeDownloaded);
-			}).toList();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(memoDTOs).build();
-			return ResponseEntity.ok().body(response);
+			memoService.delete(userId, memoId);
+			return ResponseEntity.ok().body(null);
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
@@ -238,9 +105,9 @@ public class MemoController {
 	}
 	
 	@PostMapping("/like")
-	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
 		try {
-			memoService.like(userId, memoId);
+			memoService.like(userId, memoId.get("memoId"));
 			return ResponseEntity.ok(null);
 		} catch (Exception e) {
 			String error = e.getMessage();
@@ -249,20 +116,8 @@ public class MemoController {
 		}
 	}
 	
-	@PostMapping("/scrap")
-	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
-		try {
-			memoService.scrap(userId, memoId);
-			return ResponseEntity.ok(null);
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
-	}
-	
-	@DeleteMapping("/like")
-	public ResponseEntity<?> unlikeMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+	@DeleteMapping("/like/{memoId}")
+	public ResponseEntity<?> unlikeMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		try {
 			memoService.unlike(userId, memoId);
 			return ResponseEntity.ok(null);
@@ -273,8 +128,20 @@ public class MemoController {
 		}
 	}
 	
-	@DeleteMapping("/scrap")
-	public ResponseEntity<?> unscrapMemo(@AuthenticationPrincipal String userId, @RequestParam String memoId) {
+	@PostMapping("/scrap")
+	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
+		try {
+			memoService.scrap(userId, memoId.get("memoId"));
+			return ResponseEntity.ok(null);
+		} catch (Exception e) {
+			String error = e.getMessage();
+			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
+			return ResponseEntity.badRequest().body(response);
+		}
+	}
+	
+	@DeleteMapping("/scrap/{memoId}")
+	public ResponseEntity<?> unscrapMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		try {
 			memoService.unscrap(userId, memoId);
 			return ResponseEntity.ok(null);
