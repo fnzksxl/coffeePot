@@ -1,5 +1,6 @@
 package com.coffeepot.coffeepotspring.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,7 +37,7 @@ public class UserController {
 	public ResponseEntity<?> registerUser(@RequestBody UserRequestDTO userRequestDTO) {
 		try {
 			UserSignupResponseDTO responseUserDTO = userService.create(userRequestDTO, passwordEncoder);
-			return ResponseEntity.ok().body(responseUserDTO);
+			return ResponseEntity.status(HttpStatus.CREATED).body(responseUserDTO);
 		} catch (Exception e) {
 			// 유저 정보는 항상 하나이므로 리스트로 만들어야 하는 ResponseDTO 안 씀
 			ResponseDTO responseDTO = ResponseDTO.builder()
