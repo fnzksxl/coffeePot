@@ -36,6 +36,9 @@ public class HashTagService {
 	@Transactional
 	public List<HashTagEntity> update(MemoEntity memoEntity, List<String> hashTags) {
 		hashTagRepository.deleteByMemoEntity(memoEntity);
+		if (hashTags == null) {
+			return null;
+		}
 		return create(memoEntity, hashTags);
 	}
 

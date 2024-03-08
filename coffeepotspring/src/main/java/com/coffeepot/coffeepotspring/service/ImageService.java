@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.coffeepot.coffeepotspring.model.ImageDataEntity;
 import com.coffeepot.coffeepotspring.model.MemoEntity;
 import com.coffeepot.coffeepotspring.persistence.ImageRepository;
-import com.coffeepot.coffeepotspring.util.ImageUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,13 +25,38 @@ public class ImageService {
 
 	private final String MEMO_IMAGE_BASE_PATH = "C:/Users/KWC/Desktop/PKNU/Y2023/CoffePot/coffeePot-BE/coffeepotspring/src/main/resources/memoimages/";
 
-	public List<ImageDataEntity> uploadImages(List<ImageDataEntity> imageDataEntities) {
+	public List<ImageDataEntity> uploadImages(MemoEntity memoEntity, List<MultipartFile> uploadedImages) throws IOException {
+		List<ImageDataEntity> imageDataEntities = new ArrayList<>();
+		for (MultipartFile uploadedImage : uploadedImages) {
+			String savedName = memoEntity.getId() + '_' + System.currentTimeMillis() + '_' + uploadedImage.getOriginalFilename();
+			File savedFile = new File(MEMO_IMAGE_BASE_PATH + savedName);
+			uploadedImage.transferTo(savedFile);
+			
+			imageDataEntities.add(ImageDataEntity.builder()
+					.memoEntity(memoEntity)
+					.originalName(uploadedImage.getOriginalFilename())
+					.savedName(savedName)
+					.type(uploadedImage.getContentType())
+					.build());
+		}
 		return imageRepository.saveAll(imageDataEntities);
 	}
 
 	public List<String> retrieveSavedNamesByMemoEntity(MemoEntity memoEntity) {
 		List<ImageDataEntity> imageDataEntities = imageRepository.findAllByMemoEntity(memoEntity);
 		return imageDataEntities.stream().map(image -> image.getSavedName()).toList();
+	}
+	
+	public List<ImageDataEntity> retrieveByMemoEntity(MemoEntity memoEntity) {
+		return imageRepository.findAllByMemoEntity(memoEntity);
+	}
+	
+	public List<ImageDataEntity> update(MemoEntity memoEntity, List<MultipartFile> uploadedImages) throws IOException {
+		deleteByMemoEntity(memoEntity);
+		if (uploadedImages == null) {
+			return null;
+		}
+		return uploadImages(memoEntity, uploadedImages);
 	}
 
 	@Transactional

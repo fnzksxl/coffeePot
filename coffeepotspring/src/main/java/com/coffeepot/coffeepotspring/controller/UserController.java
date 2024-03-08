@@ -1,8 +1,5 @@
 package com.coffeepot.coffeepotspring.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,13 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coffeepot.coffeepotspring.dto.AccountRecoveryResponseDTO;
 import com.coffeepot.coffeepotspring.dto.JWTReissueResponseDTO;
-import com.coffeepot.coffeepotspring.dto.PasswordRecoveryResponseDTO;
+import com.coffeepot.coffeepotspring.dto.PasswordReissueResponseDTO;
 import com.coffeepot.coffeepotspring.dto.ResponseDTO;
 import com.coffeepot.coffeepotspring.dto.UserRequestDTO;
 import com.coffeepot.coffeepotspring.dto.UserSigninResponseDTO;
 import com.coffeepot.coffeepotspring.dto.UserSignupResponseDTO;
-import com.coffeepot.coffeepotspring.model.UserEntity;
-import com.coffeepot.coffeepotspring.security.TokenProvider;
 import com.coffeepot.coffeepotspring.service.UserService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,27 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
 	
 	private final UserService userService;
-	private final TokenProvider tokenProvider;
 	private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 	
 	@PostMapping("/signup")
 	public ResponseEntity<?> registerUser(@RequestBody UserRequestDTO userRequestDTO) {
 		try {
-			if (userRequestDTO == null || userRequestDTO.getPassword() == null) {
-				throw new RuntimeException("Invalid Password value.");
-			}
-			// 요청을 이용해 유저 만들기
-			UserEntity userEntity = UserEntity.builder()
-					.username(userRequestDTO.getUsername())
-					.password(passwordEncoder.encode(userRequestDTO.getPassword()))
-					.build();
-			// 서비스를 이용해 유저 리포지토리에 저장
-			UserEntity registeredUser = userService.create(userEntity);
-			UserSignupResponseDTO responseUserDTO = UserSignupResponseDTO.builder()
-					.id(registeredUser.getId())
-					.username(registeredUser.getUsername())
-					.build();
-			
+			UserSignupResponseDTO responseUserDTO = userService.create(userRequestDTO, passwordEncoder);
 			return ResponseEntity.ok().body(responseUserDTO);
 		} catch (Exception e) {
 			// 유저 정보는 항상 하나이므로 리스트로 만들어야 하는 ResponseDTO 안 씀
@@ -68,25 +48,12 @@ public class UserController {
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticate(@RequestBody UserRequestDTO userRequestDTO) {
-		UserEntity userEntity = userService.getByCredentials(
-				userRequestDTO.getUsername(),
-				userRequestDTO.getPassword(),
-				passwordEncoder);
-		
-		// signin 시에는 access, refresh 둘 다 발급
-		if (userEntity != null) {
-			final String accessToken = tokenProvider.createAccessToken(userEntity);
-			final String refreshToken = tokenProvider.createRefreshToken(userEntity);
-			final UserSigninResponseDTO responseUserDTO = UserSigninResponseDTO.builder()
-					.username(userEntity.getUsername())
-					.id(userEntity.getId())
-					.accessToken(accessToken)
-					.refreshToken(refreshToken)
-					.build();
-			return ResponseEntity.ok().body(responseUserDTO);
-		} else {
+		try {
+			UserSigninResponseDTO signinResponseDTO = userService.signin(userRequestDTO, passwordEncoder);
+			return ResponseEntity.ok().body(signinResponseDTO);
+		} catch (Exception e) {
 			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error("Login Failed")
+					.error(e.getMessage())
 					.build();
 			return ResponseEntity.badRequest().body(responseDTO);
 		}
@@ -94,50 +61,30 @@ public class UserController {
 
 	@PatchMapping("/reissue")
 	public ResponseEntity<?> reissueAccessToken(@RequestBody UserRequestDTO userRequestDTO, HttpServletRequest request) {
-		String refreshToken = request.getHeader("Authorization");
-		
-		if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
-			refreshToken = refreshToken.substring(7);
-		}
-		
-		UserEntity userEntity = userService.getByCredentials(
-				userRequestDTO.getUsername(),
-				userRequestDTO.getPassword(),
-				passwordEncoder);
-		
-		String accessToken = tokenProvider.validateAndReissueAccessToken(refreshToken, userEntity);
-		// null을 반환받았다면 if 문 실행
-		if (accessToken == null) {
+		try {
+			String refreshToken = request.getHeader("Authorization");
+			if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
+				refreshToken = refreshToken.substring(7);
+			}
+			
+			JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
+			return ResponseEntity.ok().body(jwtReissueResponseDTO);
+		} catch (Exception e) {
 			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error("Reissue Failed")
+					.error(e.getMessage())
 					.build();
 			return ResponseEntity.badRequest().body(responseDTO);
 		}
-		
-		JWTReissueResponseDTO responseUserDTO = JWTReissueResponseDTO.builder()
-				.username(userEntity.getUsername())
-				.id(userEntity.getId())
-				.accessToken(accessToken)
-				.build();
-		return ResponseEntity.ok().body(responseUserDTO);
 	}
 	
 	@PostMapping("/find-username")
 	public ResponseEntity<?> findUsername(@RequestBody UserRequestDTO userRequestDTO) {
-		List<String> usernameInfo = new ArrayList<String>();
-		usernameInfo.add(userRequestDTO.getEmail());
-		// TODO
-		// 이외 다른 가입 정보 정해지면 추가로 add 하기
-		
 		try {
-			UserEntity userEntity = userService.getByUsernameInfo(usernameInfo);
-			final AccountRecoveryResponseDTO responseUserDTO = AccountRecoveryResponseDTO.builder()
-					.username(userEntity.getUsername())
-					.build();
-			return ResponseEntity.ok().body(responseUserDTO);
+			AccountRecoveryResponseDTO responseDTO = userService.getByUsernameInfo(userRequestDTO);
+			return ResponseEntity.ok().body(responseDTO);
 		} catch (Exception e) {
 			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error("No Such Username")
+					.error(e.getMessage())
 					.build();
 			return ResponseEntity.badRequest().body(responseDTO);
 		}
@@ -145,41 +92,10 @@ public class UserController {
 	
 	@PostMapping("/find-password")
 	public ResponseEntity<?> findPassword(@RequestBody UserRequestDTO userRequestDTO) {
-		List<String> passwordInfo = new ArrayList<String>();
-		passwordInfo.add(userRequestDTO.getEmail());
-		// TODO
-		// 이외 다른 가입 정보 정해지면 추가로 add 하기
-		
-		// 비밀번호를 알려줄 수 없으므로 재설정하도록 해야 함
+		// 비밀번호 이메일로 재발급하기
 		try {
-			UserEntity userEntity = userService.getByPasswordInfo(passwordInfo);
-			final AccountRecoveryResponseDTO responseUserDTO = AccountRecoveryResponseDTO.builder()
-					.username(userEntity.getUsername())
-					.build();
-			return ResponseEntity.ok().body(responseUserDTO);
-		} catch (Exception e) {
-			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error("No Password Matching")
-					.build();
-			return ResponseEntity.badRequest().body(responseDTO);
-		}
-	}
-	
-	@PostMapping("/reset-password")
-	public ResponseEntity<?> resetPassword(@RequestBody UserRequestDTO userRequestDTO) {
-		try {
-			UserEntity userEntity = UserEntity.builder()
-					.username(userRequestDTO.getUsername())
-					.password(passwordEncoder.encode(userRequestDTO.getPassword()))
-					.build();
-			UserEntity passwordChangedUser = userService.updatePassword(userEntity);
-
-			PasswordRecoveryResponseDTO responseUserDTO = PasswordRecoveryResponseDTO.builder()
-					.id(passwordChangedUser.getId())
-					.username(passwordChangedUser.getUsername())
-					.build();
-			
-			return ResponseEntity.ok().body(responseUserDTO);
+			PasswordReissueResponseDTO responseDTO = userService.getByPasswordInfo(userRequestDTO, passwordEncoder);
+			return ResponseEntity.ok().body(responseDTO);
 		} catch (Exception e) {
 			ResponseDTO responseDTO = ResponseDTO.builder()
 					.error(e.getMessage())

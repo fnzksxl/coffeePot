@@ -10,7 +10,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import com.coffeepot.coffeepotspring.model.RefreshToken;
-import com.coffeepot.coffeepotspring.model.UserEntity;
 import com.coffeepot.coffeepotspring.persistence.JwtRepository;
 
 import io.jsonwebtoken.Claims;
@@ -34,7 +33,7 @@ public class TokenProvider {
 	private static final String ISSUER = "coffeepot";
 	private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 
-	public String createAccessToken(UserEntity userEntity) {
+	public String createAccessToken(String userId) {
 		// 기한은 지금부터 1일로 설정
 		Date expiryDate = Date.from(
 				Instant.now()
@@ -59,7 +58,7 @@ public class TokenProvider {
 				// signWith(SignatureAlgorithm, String)은 deprecated
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
 				// payload에 들어갈 내용
-				.setSubject(userEntity.getId()) // sub
+				.setSubject(userId) // sub
 				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
@@ -87,7 +86,7 @@ public class TokenProvider {
 				.compact();
 	}
 	
-	public String createRefreshToken(UserEntity userEntity) {
+	public String createRefreshToken(String userId) {
 		// 기한은 지금부터 2주로 설정
 		Date expiryDate = Date.from(
 				Instant.now()
@@ -95,19 +94,19 @@ public class TokenProvider {
 		
 		String newRefreshToken = Jwts.builder()
 				.signWith(SECRET_KEY, SignatureAlgorithm.HS512)
-				.setSubject(userEntity.getUsername())
+				.setSubject(userId)
 				.setIssuer(ISSUER) // iss
 				.setIssuedAt(new Date())
 				.setExpiration(expiryDate)
 				.compact();
 		
-		jwtRepository.findByUserId(userEntity.getUsername())
+		jwtRepository.findByUserId(userId)
 				.ifPresent((refreshToken) -> {
 					jwtRepository.delete(refreshToken);
 				});
 		
 		jwtRepository.save(RefreshToken.builder()
-				.userId(userEntity.getUsername())
+				.userId(userId)
 				.refreshToken(newRefreshToken)
 				.build());
 		
@@ -153,14 +152,13 @@ public class TokenProvider {
 	}
 
 	// refresh token이 DB에 있는지 검증 후 있으면 새 access token 발급
-	public String validateAndReissueAccessToken(String token, UserEntity userEntity) {
-		Optional<RefreshToken> refreshToken = jwtRepository.findByRefreshToken(token);
-		if (refreshToken.isPresent()) {
-			String accessToken = createAccessToken(userEntity);
+	public String validateAndReissueAccessToken(String refreshToken, String userId) {
+		Optional<RefreshToken> oRefreshToken = jwtRepository.findByRefreshToken(refreshToken);
+		if (oRefreshToken.isPresent()) {
+			String accessToken = createAccessToken(userId);
 			return accessToken;
-		} else {
-		    return null;
 		}
+		throw new RuntimeException("Access token validation and reissue failed");
 	}
 
 }
