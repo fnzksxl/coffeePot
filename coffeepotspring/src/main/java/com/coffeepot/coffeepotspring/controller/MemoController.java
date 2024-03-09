@@ -1,5 +1,6 @@
 package com.coffeepot.coffeepotspring.controller;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class MemoController {
 			List<MemoResponseDTO> responseDTOs = List.of(memoService.create(userId, memoRequestDTO));
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 			return ResponseEntity.status(HttpStatus.CREATED).body(response);
-		} catch (Exception e) {
+		} catch (IOException e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
 			return ResponseEntity.badRequest().body(response);
@@ -51,15 +52,9 @@ public class MemoController {
 			@RequestParam(defaultValue = "") String memoId,
 			@RequestParam(defaultValue = "5") int pageSize,
 			@RequestParam(defaultValue = "createdAt") String sortBy) {
-		try {
-			List<MemoResponseDTO> responseDTOs = memoService.retrieve(memoId, pageSize, sortBy);
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
-			return ResponseEntity.ok().body(response);
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
+		List<MemoResponseDTO> responseDTOs = memoService.retrieve(memoId, pageSize, sortBy);
+		ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
+		return ResponseEntity.ok().body(response);
 	}
 	
 	@GetMapping("/my-memo-page")
@@ -68,24 +63,18 @@ public class MemoController {
 			@RequestParam(defaultValue = "") String memoId,
 			@RequestParam(defaultValue = "5") int pageSize,
 			@RequestParam(defaultValue = "createdAt") String sortBy) {
-		try {
-			List<MemoResponseDTO> responseDTOs = memoService.retrieveMyMemoPage(userId, memoId, pageSize, sortBy);
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
-			return ResponseEntity.ok().body(response);
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
+		List<MemoResponseDTO> responseDTOs = memoService.retrieveMyMemoPage(userId, memoId, pageSize, sortBy);
+		ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
+		return ResponseEntity.ok().body(response);
 	}
 	
 	@PutMapping
 	public ResponseEntity<?> updateMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoRequestDTO memoRequestDTO) {
 		try {
-			List<MemoResponseDTO> responseDTOs = List.of(memoService.update(userId, memoRequestDTO)); 
+			List<MemoResponseDTO> responseDTOs = List.of(memoService.update(userId, memoRequestDTO));
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 			return ResponseEntity.ok().body(response);
-		} catch (Exception e) {
+		} catch (IOException e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
 			return ResponseEntity.badRequest().body(response);
@@ -95,62 +84,32 @@ public class MemoController {
 	@DeleteMapping("/{memoId}")
 	public ResponseEntity<?> deleteMemo(
 			@AuthenticationPrincipal String userId, @PathVariable String memoId) {
-		try {
-			memoService.delete(userId, memoId);
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
+		memoService.delete(userId, memoId);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 	
 	@PostMapping("/like")
 	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
-		try {
-			memoService.like(userId, memoId.get("memoId"));
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
+		memoService.like(userId, memoId.get("memoId"));
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 	
 	@DeleteMapping("/like/{memoId}")
 	public ResponseEntity<?> unlikeMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
-		try {
-			memoService.unlike(userId, memoId);
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
+		memoService.unlike(userId, memoId);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 	
 	@PostMapping("/scrap")
 	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
-		try {
-			memoService.scrap(userId, memoId.get("memoId"));
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
+		memoService.scrap(userId, memoId.get("memoId"));
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 	
 	@DeleteMapping("/scrap/{memoId}")
 	public ResponseEntity<?> unscrapMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
-		try {
-			memoService.unscrap(userId, memoId);
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-		} catch (Exception e) {
-			String error = e.getMessage();
-			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
-		}
+		memoService.unscrap(userId, memoId);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 
 }
