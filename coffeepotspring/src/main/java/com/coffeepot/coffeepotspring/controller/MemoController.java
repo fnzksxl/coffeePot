@@ -3,6 +3,7 @@ package com.coffeepot.coffeepotspring.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,7 +38,7 @@ public class MemoController {
 		try {
 			List<MemoResponseDTO> responseDTOs = List.of(memoService.create(userId, memoRequestDTO));
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
-			return ResponseEntity.ok().body(response);
+			return ResponseEntity.status(HttpStatus.CREATED).body(response);
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
