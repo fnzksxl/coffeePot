@@ -97,7 +97,7 @@ public class MemoController {
 			@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		try {
 			memoService.delete(userId, memoId);
-			return ResponseEntity.ok().body(null);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
@@ -109,7 +109,7 @@ public class MemoController {
 	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
 		try {
 			memoService.like(userId, memoId.get("memoId"));
-			return ResponseEntity.ok(null);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
@@ -121,7 +121,7 @@ public class MemoController {
 	public ResponseEntity<?> unlikeMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		try {
 			memoService.unlike(userId, memoId);
-			return ResponseEntity.ok(null);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
@@ -133,7 +133,7 @@ public class MemoController {
 	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
 		try {
 			memoService.scrap(userId, memoId.get("memoId"));
-			return ResponseEntity.ok(null);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
@@ -145,7 +145,7 @@ public class MemoController {
 	public ResponseEntity<?> unscrapMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		try {
 			memoService.unscrap(userId, memoId);
-			return ResponseEntity.ok(null);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} catch (Exception e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
