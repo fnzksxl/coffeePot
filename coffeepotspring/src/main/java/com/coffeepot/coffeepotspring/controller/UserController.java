@@ -69,7 +69,7 @@ public class UserController {
 			}
 			
 			JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
-			return ResponseEntity.ok().body(jwtReissueResponseDTO);
+			return ResponseEntity.status(HttpStatus.CREATED).body(jwtReissueResponseDTO);
 		} catch (Exception e) {
 			ResponseDTO responseDTO = ResponseDTO.builder()
 					.error(e.getMessage())
