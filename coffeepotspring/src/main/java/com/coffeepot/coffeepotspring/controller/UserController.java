@@ -53,7 +53,7 @@ public class UserController {
 		}
 		
 		JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
-		return ResponseEntity.status(HttpStatus.CREATED).body(jwtReissueResponseDTO);
+		return ResponseEntity.ok().body(jwtReissueResponseDTO);
 	}
 	
 	@PostMapping("/find-username")
