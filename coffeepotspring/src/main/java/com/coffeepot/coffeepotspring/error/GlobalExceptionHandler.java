@@ -1,6 +1,7 @@
 package com.coffeepot.coffeepotspring.error;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,18 +13,21 @@ import com.coffeepot.coffeepotspring.dto.ResponseDTO;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+	
+	private ResponseEntity<Object> makeResponse(int status, Exception e) {
+		ResponseDTO<Object> response = ResponseDTO.builder().error(e.getMessage()).build();
+		return ResponseEntity.status(status).body(response);
+	}
 
 	@Override
 	protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
 			HttpStatusCode statusCode, WebRequest request) {
-		ResponseDTO<Object> response = ResponseDTO.builder().error(ex.getMessage()).build();
-		return ResponseEntity.status(statusCode.value()).body(response);
+		return makeResponse(statusCode.value(), ex);
 	}
 	
 	@ExceptionHandler
-	protected ResponseEntity<?> handleException(Exception e) {
-		ResponseDTO<Object> response = ResponseDTO.builder().error(e.getMessage()).build();
-		return ResponseEntity.badRequest().body(response);
+	public ResponseEntity<?> handleException(Exception e) {
+		return makeResponse(HttpStatus.BAD_REQUEST.value(), e);
 	}
 
 }
