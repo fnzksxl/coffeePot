@@ -43,7 +43,7 @@ public class MemoController {
 		} catch (IOException e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
+			return ResponseEntity.internalServerError().body(response);
 		}
 	}
 	
@@ -77,7 +77,7 @@ public class MemoController {
 		} catch (IOException e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
-			return ResponseEntity.badRequest().body(response);
+			return ResponseEntity.internalServerError().body(response);
 		}
 	}
 	
