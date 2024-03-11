@@ -11,6 +11,7 @@ import org.springframework.security.web.authentication.Http403ForbiddenEntryPoin
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.filter.CorsFilter;
 
+import com.coffeepot.coffeepotspring.security.CustomAuthenticationEntryPoint;
 import com.coffeepot.coffeepotspring.security.JwtAuthenticationFilter;
 import com.coffeepot.coffeepotspring.security.OAuthAuthorizationRequestBasedOnCookieRepository;
 import com.coffeepot.coffeepotspring.security.OAuthSuccessHandler;
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class SecurityConfiguration {
+public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final OAuthUserServiceImpl oAuthUserService;
@@ -64,7 +65,7 @@ public class SecurityConfiguration {
 				.successHandler(oAuthSuccessHandler))
 		.exceptionHandling((exception) -> exception
 				// authenticationEntryPoint: 인증의 시작점
-				.authenticationEntryPoint(new Http403ForbiddenEntryPoint())); // 403 EntryPoint 추가
+				.authenticationEntryPoint(new CustomAuthenticationEntryPoint()));
 		// TODO
 		// redirect_url을 파라미터로 넘겨주면 클라이언트에서 아무나 이 값을 바꿀 수 있으므로
 		// 실제 서비스에서는 서버에서 redirect_url이 허용된 도메인을 갖고 있는지 확인해야 한다.
