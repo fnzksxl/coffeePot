@@ -50,7 +50,9 @@ public class SecurityConfig {
 						new AntPathRequestMatcher("/auth/**"),
 						new AntPathRequestMatcher("/oauth2/**"),
 						new AntPathRequestMatcher("/memo/page"),
-						new AntPathRequestMatcher("/search/**"))
+						new AntPathRequestMatcher("/search/**"),
+						new AntPathRequestMatcher("/swagger-ui/**"),
+						new AntPathRequestMatcher("/v3/api-docs/**"))
 				.permitAll()
 				.anyRequest() // 그 외의 경로는 모두 인증해야 됨
 				.authenticated())
