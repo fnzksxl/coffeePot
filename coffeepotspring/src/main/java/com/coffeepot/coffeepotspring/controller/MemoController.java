@@ -21,8 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coffeepot.coffeepotspring.dto.MemoRequestDTO;
 import com.coffeepot.coffeepotspring.dto.MemoResponseDTO;
 import com.coffeepot.coffeepotspring.dto.ResponseDTO;
+import com.coffeepot.coffeepotspring.dto.wrapper.MemoResponseDTOWrapper;
 import com.coffeepot.coffeepotspring.service.MemoService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +40,12 @@ public class MemoController {
 	
 	private final MemoService memoService;
 	
+	@Operation(summary = "새 메모 생성", description = "id 불필요, hashTags, uploadedImages는 선택, 나머지는 필수")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 생성 성공", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
+		})
+	})
 	@PostMapping
 	public ResponseEntity<?> createMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoRequestDTO memoRequestDTO) {
 		try {
