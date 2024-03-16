@@ -42,7 +42,7 @@ public class UserController {
 	
 	@Operation(summary = "유저 정보로 회원 가입")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "회원 가입 성공", content = {
+			@ApiResponse(responseCode = "201", description = "회원 가입 성공", content = {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = UserSignupResponseDTO.class))
 			}),
 			@ApiResponse(responseCode = "400", description = "회원 가입 실패", content = {
@@ -62,6 +62,9 @@ public class UserController {
 			}),
 			@ApiResponse(responseCode = "400", description = "로그인 실패", content = {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+			}),
+			@ApiResponse(responseCode = "404", description = "등록되지 않은 user", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
 	@PostMapping("/signin")
@@ -78,6 +81,9 @@ public class UserController {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = JWTReissueResponseDTO.class))
 			}),
 			@ApiResponse(responseCode = "400", description = "재발급 실패", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+			}),
+			@ApiResponse(responseCode = "404", description = "등록되지 않은 user", content = {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
@@ -97,7 +103,7 @@ public class UserController {
 			@ApiResponse(responseCode = "200", description = "Username 찾기 성공", content = {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = AccountRecoveryResponseDTO.class))
 			}),
-			@ApiResponse(responseCode = "400", description = "Username 찾기 실패", content = {
+			@ApiResponse(responseCode = "404", description = "Username 찾기 실패", content = {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
