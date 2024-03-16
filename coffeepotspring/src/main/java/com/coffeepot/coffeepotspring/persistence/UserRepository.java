@@ -10,7 +10,7 @@ import com.coffeepot.coffeepotspring.model.UserEntity;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, String> {
 
-	UserEntity findByUsername(String username);
+	Optional<UserEntity> findByUsername(String username);
 	
 	Boolean existsByEmail(String email);
 

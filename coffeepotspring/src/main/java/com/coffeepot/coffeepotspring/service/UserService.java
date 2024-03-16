@@ -53,24 +53,24 @@ public class UserService {
 	}
 	
 	public UserSigninResponseDTO signin(final UserRequestDTO userRequestDTO, final PasswordEncoder encoder) {
-		final UserEntity originalUser = userRepository.findByUsername(userRequestDTO.getUsername());
-		
-		if (originalUser != null && encoder.matches(userRequestDTO.getPassword(), originalUser.getPassword())) {
-			String accessToken = tokenProvider.createAccessToken(originalUser.getId());
-			String refreshToken = tokenProvider.createRefreshToken(originalUser.getId());
-			
-			return UserSigninResponseDTO.builder()
-					.id(originalUser.getId())
-					.username(originalUser.getUsername())
-					.accessToken(accessToken)
-					.refreshToken(refreshToken)
-					.build();
+		final UserEntity originalUser = userRepository.findByUsername(userRequestDTO.getUsername()).orElseThrow();
+		if (!encoder.matches(userRequestDTO.getPassword(), originalUser.getPassword())) {
+			throw new RuntimeException("Incorrect password");
 		}
-		throw new RuntimeException("Signin failed");
+		
+		String accessToken = tokenProvider.createAccessToken(originalUser.getId());
+		String refreshToken = tokenProvider.createRefreshToken(originalUser.getId());
+		
+		return UserSigninResponseDTO.builder()
+				.id(originalUser.getId())
+				.username(originalUser.getUsername())
+				.accessToken(accessToken)
+				.refreshToken(refreshToken)
+				.build();
 	}
 	
 	public JWTReissueResponseDTO reissueAccessToken(final UserRequestDTO userRequestDTO, final String refreshToken) {
-		UserEntity userEntity = userRepository.findByUsername(userRequestDTO.getUsername());
+		UserEntity userEntity = userRepository.findByUsername(userRequestDTO.getUsername()).orElseThrow();
 		String accessToken = tokenProvider.validateAndReissueAccessToken(refreshToken, userEntity.getId());
 		return JWTReissueResponseDTO.builder()
 				.id(userEntity.getId())
@@ -93,7 +93,7 @@ public class UserService {
 		validatePasswordInfo(userRequestDTO);
 		String newPassword = reissuePassword();
 		
-		UserEntity originalUserEntity = userRepository.findByUsername(userRequestDTO.getUsername());
+		UserEntity originalUserEntity = userRepository.findByUsername(userRequestDTO.getUsername()).orElseThrow();
 		originalUserEntity.updatePassword(passwordEncoder.encode(newPassword));
 		userRepository.save(originalUserEntity);
 		
