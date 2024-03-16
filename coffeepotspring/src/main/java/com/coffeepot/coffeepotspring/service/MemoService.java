@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,7 +59,7 @@ public class MemoService {
 	
 	private void validateAuthor(final String userId, final MemoEntity memoEntity) {
 		if (!userId.equals(memoEntity.getUserId())) {
-			throw new RuntimeException("User is not the author of the memo");
+			throw new BadCredentialsException("User is not the author of the memo");
 		}
 	}
 	

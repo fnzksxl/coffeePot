@@ -1,5 +1,6 @@
 package com.coffeepot.coffeepotspring.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,74 +35,38 @@ public class UserController {
 	
 	@PostMapping("/signup")
 	public ResponseEntity<?> registerUser(@RequestBody UserRequestDTO userRequestDTO) {
-		try {
-			UserSignupResponseDTO responseUserDTO = userService.create(userRequestDTO, passwordEncoder);
-			return ResponseEntity.ok().body(responseUserDTO);
-		} catch (Exception e) {
-			// 유저 정보는 항상 하나이므로 리스트로 만들어야 하는 ResponseDTO 안 씀
-			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error(e.getMessage())
-					.build();
-			return ResponseEntity.badRequest().body(responseDTO);
-		}
+		UserSignupResponseDTO responseUserDTO = userService.create(userRequestDTO, passwordEncoder);
+		return ResponseEntity.status(HttpStatus.CREATED).body(responseUserDTO);
 	}
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticate(@RequestBody UserRequestDTO userRequestDTO) {
-		try {
-			UserSigninResponseDTO signinResponseDTO = userService.signin(userRequestDTO, passwordEncoder);
-			return ResponseEntity.ok().body(signinResponseDTO);
-		} catch (Exception e) {
-			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error(e.getMessage())
-					.build();
-			return ResponseEntity.badRequest().body(responseDTO);
-		}
+		UserSigninResponseDTO signinResponseDTO = userService.signin(userRequestDTO, passwordEncoder);
+		return ResponseEntity.ok().body(signinResponseDTO);
 	}
 
 	@PatchMapping("/reissue")
 	public ResponseEntity<?> reissueAccessToken(@RequestBody UserRequestDTO userRequestDTO, HttpServletRequest request) {
-		try {
-			String refreshToken = request.getHeader("Authorization");
-			if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
-				refreshToken = refreshToken.substring(7);
-			}
-			
-			JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
-			return ResponseEntity.ok().body(jwtReissueResponseDTO);
-		} catch (Exception e) {
-			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error(e.getMessage())
-					.build();
-			return ResponseEntity.badRequest().body(responseDTO);
+		String refreshToken = request.getHeader("Authorization");
+		if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
+			refreshToken = refreshToken.substring(7);
 		}
+		
+		JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
+		return ResponseEntity.ok().body(jwtReissueResponseDTO);
 	}
 	
 	@PostMapping("/find-username")
 	public ResponseEntity<?> findUsername(@RequestBody UserRequestDTO userRequestDTO) {
-		try {
-			AccountRecoveryResponseDTO responseDTO = userService.getByUsernameInfo(userRequestDTO);
-			return ResponseEntity.ok().body(responseDTO);
-		} catch (Exception e) {
-			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error(e.getMessage())
-					.build();
-			return ResponseEntity.badRequest().body(responseDTO);
-		}
+		AccountRecoveryResponseDTO responseDTO = userService.getByUsernameInfo(userRequestDTO);
+		return ResponseEntity.ok().body(responseDTO);
 	}
 	
 	@PostMapping("/find-password")
 	public ResponseEntity<?> findPassword(@RequestBody UserRequestDTO userRequestDTO) {
 		// 비밀번호 이메일로 재발급하기
-		try {
-			PasswordReissueResponseDTO responseDTO = userService.getByPasswordInfo(userRequestDTO, passwordEncoder);
-			return ResponseEntity.ok().body(responseDTO);
-		} catch (Exception e) {
-			ResponseDTO responseDTO = ResponseDTO.builder()
-					.error(e.getMessage())
-					.build();
-			return ResponseEntity.badRequest().body(responseDTO);
-		}
+		PasswordReissueResponseDTO responseDTO = userService.getByPasswordInfo(userRequestDTO, passwordEncoder);
+		return ResponseEntity.ok().body(responseDTO);
 	}
 
 }
