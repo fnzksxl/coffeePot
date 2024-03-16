@@ -1,5 +1,7 @@
 package com.coffeepot.coffeepotspring.error;
 
+import java.util.NoSuchElementException;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -34,6 +36,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler
 	public ResponseEntity<?> handleAuthenticationException(AuthenticationException e) {
 		return makeResponse(HttpStatus.UNAUTHORIZED.value(), e);
+	}
+	
+	@ExceptionHandler
+	public ResponseEntity<?> handleNoSuchElementException(NoSuchElementException e) {
+		return makeResponse(HttpStatus.NOT_FOUND.value(), e);
 	}
 
 }
