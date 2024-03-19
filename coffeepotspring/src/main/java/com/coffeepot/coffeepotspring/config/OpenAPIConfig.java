@@ -12,6 +12,11 @@ import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 				name = "Reissue Authentication",
 				type = SecuritySchemeType.HTTP,
 				bearerFormat = "JWT",
+				scheme = "bearer"),
+		@SecurityScheme(
+				name = "Signin Authentication",
+				type = SecuritySchemeType.HTTP,
+				bearerFormat = "JWT",
 				scheme = "bearer")
 })
 public class OpenAPIConfig {
