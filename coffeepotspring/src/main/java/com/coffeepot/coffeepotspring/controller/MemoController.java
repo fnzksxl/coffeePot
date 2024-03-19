@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,9 +27,11 @@ import com.coffeepot.coffeepotspring.service.MemoService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,14 +43,25 @@ public class MemoController {
 	
 	private final MemoService memoService;
 	
-	@Operation(summary = "새 메모 생성", description = "id 불필요, hashTags, uploadedImages는 선택, 나머지는 필수")
+	@Operation(summary = "새 메모 생성", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+			content = @Content(
+					mediaType = "multipart/form-data",
+					schema = @Schema(allOf = MemoRequestDTO.class, requiredProperties = { "title", "content", "visibility" }))))
+	@SecurityRequirement(name = "Signin Authentication")
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "메모 생성 성공", content = {
+		@ApiResponse(responseCode = "201", description = "메모 생성 성공", content = {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
+		}),
+		@ApiResponse(responseCode = "400", description = "메모 생성 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "500", description = "서버 측 오류", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 		})
 	})
 	@PostMapping
-	public ResponseEntity<?> createMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoRequestDTO memoRequestDTO) {
+	public ResponseEntity<?> createMemo(@AuthenticationPrincipal String userId,
+			@ModelAttribute MemoRequestDTO memoRequestDTO) {
 		try {
 			List<MemoResponseDTO> responseDTOs = List.of(memoService.create(userId, memoRequestDTO));
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
@@ -58,7 +72,20 @@ public class MemoController {
 			return ResponseEntity.internalServerError().body(response);
 		}
 	}
-	
+
+	@Operation(summary = "메모 조회", description = "memoId: 커서로 사용할 메모의 id - 안 적을 경우 최상위 메모 조회\n\n"
+			+ "pageSize: 한 번에 조회할 메모 개수\n\nsortBy: 메모 정렬 기준 (createdAt만 가능)")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 조회 성공", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
+		}),
+		@ApiResponse(responseCode = "400", description = "메모 조회 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		})
+	})
 	@GetMapping("/page")
 	public ResponseEntity<?> retrieveAllMemoList(
 			@RequestParam(defaultValue = "") String memoId,
@@ -68,7 +95,21 @@ public class MemoController {
 		ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 		return ResponseEntity.ok().body(response);
 	}
-	
+
+	@Operation(summary = "사용자가 쓴 메모 조회", description = "memoId: 커서로 사용할 메모의 id - 안 적을 경우 최상위 메모 조회\n\n"
+			+ "pageSize: 한 번에 조회할 메모 개수\n\nsortBy: 메모 정렬 기준 (createdAt만 가능)")
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 조회 성공", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
+		}),
+		@ApiResponse(responseCode = "400", description = "메모 조회 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		})
+	})
 	@GetMapping("/my-memo-page")
 	public ResponseEntity<?> retrieveMyMemoList(
 			@AuthenticationPrincipal String userId,
@@ -79,7 +120,23 @@ public class MemoController {
 		ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
 		return ResponseEntity.ok().body(response);
 	}
-	
+
+	@Operation(summary = "메모 수정", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+			content = @Content(
+					mediaType = "multipart/form-data",
+					schema = @Schema(allOf = MemoRequestDTO.class, requiredProperties = { "id", "title", "content", "visibility" }))))
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 수정 성공", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
+		}),
+		@ApiResponse(responseCode = "400", description = "메모 수정 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "500", description = "서버 측 오류", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		})
+	})
 	@PutMapping
 	public ResponseEntity<?> updateMemo(@AuthenticationPrincipal String userId, @ModelAttribute MemoRequestDTO memoRequestDTO) {
 		try {
@@ -92,32 +149,73 @@ public class MemoController {
 			return ResponseEntity.internalServerError().body(response);
 		}
 	}
-	
+
+	@Operation(summary = "메모 삭제", description = "memoId: 삭제하려는 메모의 id")
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 삭제 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 삭제 실패"),
+		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+	})
 	@DeleteMapping("/{memoId}")
 	public ResponseEntity<?> deleteMemo(
 			@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		memoService.delete(userId, memoId);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
-	
+
+	@Operation(summary = "메모 좋아요", description = "memoId: 좋아요하려는 메모의 id")
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 좋아요 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 좋아요 실패"),
+		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+	})
 	@PostMapping("/like")
-	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
+	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
+					examples = @ExampleObject(value = "{\"memoId\": \"string\"}")))
+			@RequestBody Map<String, String> memoId) {
 		memoService.like(userId, memoId.get("memoId"));
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
-	
+
+	@Operation(summary = "메모 좋아요 취소", description = "memoId: 좋아요 취소하려는 메모의 id")
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 좋아요 취소 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 좋아요 취소 실패"),
+		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+	})
 	@DeleteMapping("/like/{memoId}")
 	public ResponseEntity<?> unlikeMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		memoService.unlike(userId, memoId);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
-	
+
+	@Operation(summary = "메모 스크랩", description = "memoId: 스크랩하려는 메모의 id")
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 스크랩 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 스크랩 실패"),
+		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+	})
 	@PostMapping("/scrap")
-	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId, @RequestBody Map<String, String> memoId) {
+	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
+					examples = @ExampleObject(value = "{\"memoId\": \"string\"}")))
+			@RequestBody Map<String, String> memoId) {
 		memoService.scrap(userId, memoId.get("memoId"));
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
-	
+
+	@Operation(summary = "메모 스크랩 취소", description = "memoId: 스크랩 취소하려는 메모의 id")
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 스크랩 취소 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 스크랩 취소 실패"),
+		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+	})
 	@DeleteMapping("/scrap/{memoId}")
 	public ResponseEntity<?> unscrapMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
 		memoService.unscrap(userId, memoId);
