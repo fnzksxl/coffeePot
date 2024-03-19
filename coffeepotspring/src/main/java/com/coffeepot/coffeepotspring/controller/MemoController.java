@@ -32,11 +32,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+@Tag(name = "memo-controller", description = "Swagger UI에서는 uploadedImages를 비울 경우 에러 발생. "
+		+ "Swagger UI 외에는 uploadedImages가 비어도 정상 동작.")
 @RequestMapping("/memo")
 @RequiredArgsConstructor
 public class MemoController {
@@ -53,6 +56,9 @@ public class MemoController {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
 		}),
 		@ApiResponse(responseCode = "400", description = "메모 생성 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 		}),
 		@ApiResponse(responseCode = "500", description = "서버 측 오류", content = {
@@ -82,7 +88,7 @@ public class MemoController {
 		@ApiResponse(responseCode = "400", description = "메모 조회 실패", content = {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 		}),
-		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId", content = {
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음", content = {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 		})
 	})
@@ -104,6 +110,9 @@ public class MemoController {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
 		}),
 		@ApiResponse(responseCode = "400", description = "메모 조회 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 		}),
 		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음", content = {
@@ -133,6 +142,9 @@ public class MemoController {
 		@ApiResponse(responseCode = "400", description = "메모 수정 실패", content = {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 		}),
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
 		@ApiResponse(responseCode = "500", description = "서버 측 오류", content = {
 				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 		})
@@ -153,9 +165,16 @@ public class MemoController {
 	@Operation(summary = "메모 삭제", description = "memoId: 삭제하려는 메모의 id")
 	@SecurityRequirement(name = "Signin Authentication")
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "메모 삭제 성공"),
-		@ApiResponse(responseCode = "400", description = "메모 삭제 실패"),
-		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+		@ApiResponse(responseCode = "204", description = "메모 삭제 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 삭제 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		})
 	})
 	@DeleteMapping("/{memoId}")
 	public ResponseEntity<?> deleteMemo(
@@ -167,9 +186,16 @@ public class MemoController {
 	@Operation(summary = "메모 좋아요", description = "memoId: 좋아요하려는 메모의 id")
 	@SecurityRequirement(name = "Signin Authentication")
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "메모 좋아요 성공"),
-		@ApiResponse(responseCode = "400", description = "메모 좋아요 실패"),
-		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+		@ApiResponse(responseCode = "204", description = "메모 좋아요 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 좋아요 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		})
 	})
 	@PostMapping("/like")
 	public ResponseEntity<?> likeMemo(@AuthenticationPrincipal String userId,
@@ -183,9 +209,16 @@ public class MemoController {
 	@Operation(summary = "메모 좋아요 취소", description = "memoId: 좋아요 취소하려는 메모의 id")
 	@SecurityRequirement(name = "Signin Authentication")
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "메모 좋아요 취소 성공"),
-		@ApiResponse(responseCode = "400", description = "메모 좋아요 취소 실패"),
-		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+		@ApiResponse(responseCode = "204", description = "메모 좋아요 취소 성공"),
+		@ApiResponse(responseCode = "400", description = "메모 좋아요 취소 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		})
 	})
 	@DeleteMapping("/like/{memoId}")
 	public ResponseEntity<?> unlikeMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
@@ -196,9 +229,12 @@ public class MemoController {
 	@Operation(summary = "메모 스크랩", description = "memoId: 스크랩하려는 메모의 id")
 	@SecurityRequirement(name = "Signin Authentication")
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "메모 스크랩 성공"),
+		@ApiResponse(responseCode = "204", description = "메모 스크랩 성공"),
 		@ApiResponse(responseCode = "400", description = "메모 스크랩 실패"),
-		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음")
 	})
 	@PostMapping("/scrap")
 	public ResponseEntity<?> scrapMemo(@AuthenticationPrincipal String userId,
@@ -212,9 +248,12 @@ public class MemoController {
 	@Operation(summary = "메모 스크랩 취소", description = "memoId: 스크랩 취소하려는 메모의 id")
 	@SecurityRequirement(name = "Signin Authentication")
 	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "메모 스크랩 취소 성공"),
+		@ApiResponse(responseCode = "204", description = "메모 스크랩 취소 성공"),
 		@ApiResponse(responseCode = "400", description = "메모 스크랩 취소 실패"),
-		@ApiResponse(responseCode = "404", description = "등록되지 않은 memoId")
+		@ApiResponse(responseCode = "401", description = "인가되지 않은 사용자", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음")
 	})
 	@DeleteMapping("/scrap/{memoId}")
 	public ResponseEntity<?> unscrapMemo(@AuthenticationPrincipal String userId, @PathVariable String memoId) {
