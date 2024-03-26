@@ -2,17 +2,19 @@ package com.coffeepot.coffeepotspring.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coffeepot.coffeepotspring.dto.AccountRecoveryResponseDTO;
 import com.coffeepot.coffeepotspring.dto.JWTReissueResponseDTO;
+import com.coffeepot.coffeepotspring.dto.MyPageResponseDTO;
 import com.coffeepot.coffeepotspring.dto.PasswordReissueResponseDTO;
 import com.coffeepot.coffeepotspring.dto.ResponseDTO;
 import com.coffeepot.coffeepotspring.dto.UserRequestDTO;
@@ -21,7 +23,6 @@ import com.coffeepot.coffeepotspring.dto.UserSignupResponseDTO;
 import com.coffeepot.coffeepotspring.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class UserController {
 	
@@ -49,7 +49,7 @@ public class UserController {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
-	@PostMapping("/signup")
+	@PostMapping("/auth/signup")
 	public ResponseEntity<?> registerUser(@RequestBody UserRequestDTO userRequestDTO) {
 		UserSignupResponseDTO responseUserDTO = userService.create(userRequestDTO, passwordEncoder);
 		return ResponseEntity.status(HttpStatus.CREATED).body(responseUserDTO);
@@ -67,7 +67,7 @@ public class UserController {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
-	@PostMapping("/signin")
+	@PostMapping("/auth/signin")
 	public ResponseEntity<?> authenticate(@RequestBody UserRequestDTO userRequestDTO) {
 		UserSigninResponseDTO signinResponseDTO = userService.signin(userRequestDTO, passwordEncoder);
 		return ResponseEntity.ok().body(signinResponseDTO);
@@ -87,7 +87,7 @@ public class UserController {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
-	@PatchMapping("/reissue")
+	@PatchMapping("/auth/reissue")
 	public ResponseEntity<?> reissueAccessToken(@RequestBody UserRequestDTO userRequestDTO, HttpServletRequest request) {
 		String refreshToken = request.getHeader("Authorization");
 		if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
@@ -107,7 +107,7 @@ public class UserController {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
-	@PostMapping("/find-username")
+	@PostMapping("/auth/find-username")
 	public ResponseEntity<?> findUsername(@RequestBody UserRequestDTO userRequestDTO) {
 		AccountRecoveryResponseDTO responseDTO = userService.getByUsernameInfo(userRequestDTO);
 		return ResponseEntity.ok().body(responseDTO);
@@ -122,10 +122,26 @@ public class UserController {
 					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
 			})
 	})
-	@PostMapping("/find-password")
+	@PostMapping("/auth/find-password")
 	public ResponseEntity<?> findPassword(@RequestBody UserRequestDTO userRequestDTO) {
 		// 비밀번호 이메일로 재발급하기
 		PasswordReissueResponseDTO responseDTO = userService.getByPasswordInfo(userRequestDTO, passwordEncoder);
+		return ResponseEntity.ok().body(responseDTO);
+	}
+	
+	@Operation(summary = "로그인한 유저 세부 정보 확인")
+	@SecurityRequirement(name = "Signin Authentication")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "유저 조회 성공", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = MyPageResponseDTO.class))
+			}),
+			@ApiResponse(responseCode = "404", description = "존재하지 않는 유저", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+			})
+	})
+	@GetMapping("/my-page")
+	public ResponseEntity<?> myPage(@AuthenticationPrincipal String userId) {
+		MyPageResponseDTO responseDTO = userService.retrieveById(userId);
 		return ResponseEntity.ok().body(responseDTO);
 	}
 
