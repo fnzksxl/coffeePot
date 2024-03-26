@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.coffeepot.coffeepotspring.dto.AccountRecoveryResponseDTO;
 import com.coffeepot.coffeepotspring.dto.JWTReissueResponseDTO;
 import com.coffeepot.coffeepotspring.dto.PasswordReissueResponseDTO;
+import com.coffeepot.coffeepotspring.dto.MyPageResponseDTO;
 import com.coffeepot.coffeepotspring.dto.UserRequestDTO;
 import com.coffeepot.coffeepotspring.dto.UserSigninResponseDTO;
 import com.coffeepot.coffeepotspring.dto.UserSignupResponseDTO;
@@ -66,6 +67,15 @@ public class UserService {
 				.username(originalUser.getUsername())
 				.accessToken(accessToken)
 				.refreshToken(refreshToken)
+				.build();
+	}
+	
+	public MyPageResponseDTO retrieveById(final String userId) {
+		final UserEntity userEntity = userRepository.findById(userId).orElseThrow();
+		return MyPageResponseDTO.builder()
+				.id(userEntity.getId())
+				.username(userEntity.getUsername())
+				.email(userEntity.getEmail())
 				.build();
 	}
 	
