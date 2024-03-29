@@ -49,6 +49,7 @@ public class SecurityConfig {
 						new AntPathRequestMatcher("/"), // 이 경로들은 인증 안 해도 됨
 						new AntPathRequestMatcher("/auth/**"),
 						new AntPathRequestMatcher("/oauth2/**"),
+						new AntPathRequestMatcher("/memo/details/**"),
 						new AntPathRequestMatcher("/memo/page"),
 						new AntPathRequestMatcher("/search/**"),
 						new AntPathRequestMatcher("/swagger-ui/**"),
