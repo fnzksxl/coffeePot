@@ -78,6 +78,25 @@ public class MemoController {
 			return ResponseEntity.internalServerError().body(response);
 		}
 	}
+	
+	@Operation(summary = "메모 1개 조회")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "메모 조회 성공", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = MemoResponseDTOWrapper.class))
+		}),
+		@ApiResponse(responseCode = "400", description = "메모 조회 실패", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		}),
+		@ApiResponse(responseCode = "404", description = "메모를 찾을 수 없음", content = {
+				@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class))
+		})
+	})
+	@GetMapping("/details/{memoId}")
+	public ResponseEntity<?> retrieveMemo(@PathVariable String memoId) {
+		List<MemoResponseDTO> responseDTOs = memoService.retrieveById(memoId);
+		ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
+		return ResponseEntity.ok().body(response);
+	}
 
 	@Operation(summary = "메모 조회", description = "memoId: 커서로 사용할 메모의 id - 안 적을 경우 최상위 메모 조회\n\n"
 			+ "pageSize: 한 번에 조회할 메모 개수\n\nsortBy: 메모 정렬 기준 (createdAt만 가능)")

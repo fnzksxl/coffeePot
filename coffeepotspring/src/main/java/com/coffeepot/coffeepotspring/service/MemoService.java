@@ -88,6 +88,13 @@ public class MemoService {
 		return MemoResponseDTO.of(createdMemoEntity, hashTagEntities, imageDataEntities);
 	}
 	
+	public List<MemoResponseDTO> retrieveById(final String memoId) {
+		MemoEntity memoEntity = memoRepository.findById(memoId).orElseThrow();
+		List<HashTagEntity> hashTagEntities = hashTagService.retrieveByMemoEntity(memoEntity);
+		List<ImageDataEntity> imageDataEntities = imageService.retrieveByMemoEntity(memoEntity);
+		return List.of(MemoResponseDTO.of(memoEntity, hashTagEntities, imageDataEntities));
+	}
+	
 	public List<MemoResponseDTO> retrieve(final String memoId, final int pageSize, final String sortBy) {
 		Pageable pageable = PageRequest.of(0, pageSize, Sort.by(sortBy).descending());
 		Page<MemoEntity> memoEntities = retrievePageByCursor(memoId, pageable);
