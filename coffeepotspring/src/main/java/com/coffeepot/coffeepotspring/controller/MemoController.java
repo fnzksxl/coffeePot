@@ -1,6 +1,7 @@
 package com.coffeepot.coffeepotspring.controller;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +72,7 @@ public class MemoController {
 		try {
 			List<MemoResponseDTO> responseDTOs = List.of(memoService.create(userId, memoRequestDTO));
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().data(responseDTOs).build();
-			return ResponseEntity.status(HttpStatus.CREATED).body(response);
+			return ResponseEntity.created(URI.create("/memo/details/" + responseDTOs.get(0).getId())).body(response);
 		} catch (IOException e) {
 			String error = e.getMessage();
 			ResponseDTO<MemoResponseDTO> response = ResponseDTO.<MemoResponseDTO>builder().error(error).build();
