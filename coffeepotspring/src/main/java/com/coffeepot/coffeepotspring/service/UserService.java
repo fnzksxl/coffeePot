@@ -79,8 +79,10 @@ public class UserService {
 				.build();
 	}
 	
-	public JWTReissueResponseDTO reissueAccessToken(final UserRequestDTO userRequestDTO, final String refreshToken) {
-		UserEntity userEntity = userRepository.findByUsername(userRequestDTO.getUsername()).orElseThrow();
+	public JWTReissueResponseDTO reissueAccessToken(final String refreshToken) {
+		log.info(tokenProvider.validateAndGetUserId(refreshToken));
+		UserEntity userEntity = userRepository.findById(tokenProvider.validateAndGetUserId(refreshToken))
+				.orElseThrow();
 		String accessToken = tokenProvider.validateAndReissueAccessToken(refreshToken, userEntity.getId());
 		return JWTReissueResponseDTO.builder()
 				.id(userEntity.getId())
