@@ -73,8 +73,7 @@ public class UserController {
 		return ResponseEntity.ok().body(signinResponseDTO);
 	}
 
-	@Operation(summary = "Access token 재발급", description = "헤더의 Authorization에 refresh token 필요\n\n"
-			+ "Request body에서 username만 필요")
+	@Operation(summary = "Access token 재발급", description = "헤더의 Authorization에 refresh token 필요")
 	@SecurityRequirement(name = "Reissue Authentication")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "재발급 성공", content = {
@@ -88,13 +87,13 @@ public class UserController {
 			})
 	})
 	@PatchMapping("/auth/reissue")
-	public ResponseEntity<?> reissueAccessToken(@RequestBody UserRequestDTO userRequestDTO, HttpServletRequest request) {
+	public ResponseEntity<?> reissueAccessToken(HttpServletRequest request) {
 		String refreshToken = request.getHeader("Authorization");
 		if (StringUtils.hasText(refreshToken) && refreshToken.startsWith("Bearer ")) {
 			refreshToken = refreshToken.substring(7);
 		}
 		
-		JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(userRequestDTO, refreshToken);
+		JWTReissueResponseDTO jwtReissueResponseDTO = userService.reissueAccessToken(refreshToken);
 		return ResponseEntity.ok().body(jwtReissueResponseDTO);
 	}
 
